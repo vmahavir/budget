@@ -51,7 +51,6 @@
         .login-section .btn { width: 100%; justify-content: center; margin-top: 8px; padding: 12px; }
         .login-section .error-message { color: #d32f2f; font-size: 13px; margin-top: 10px; text-align: center; }
 
-        /* Keep Signed In checkbox */
         .keep-signed-in {
             display: flex;
             align-items: center;
@@ -65,21 +64,8 @@
             transition: background 0.2s ease;
         }
         .keep-signed-in:hover { background: #f0f2f5; }
-        .keep-signed-in input[type="checkbox"] {
-            width: 16px;
-            height: 16px;
-            accent-color: #2196f3;
-            cursor: pointer;
-            margin: 0;
-        }
-        .keep-signed-in label {
-            font-size: 13px;
-            color: #333;
-            font-weight: 500;
-            cursor: pointer;
-            margin: 0;
-            flex: 1;
-        }
+        .keep-signed-in input[type="checkbox"] { width: 16px; height: 16px; accent-color: #2196f3; cursor: pointer; margin: 0; }
+        .keep-signed-in label { font-size: 13px; color: #333; font-weight: 500; cursor: pointer; margin: 0; flex: 1; }
 
         .password-wrapper { position: relative; }
         .password-wrapper input { padding-right: 40px !important; }
@@ -265,16 +251,24 @@
             left: 68px;
             top: 50%;
             transform: translateY(-50%);
-            background: rgba(0,0,0,0.85);
-            color: #fff;
-            font-size: 12px;
-            font-weight: 600;
-            padding: 6px 10px;
+            background: #0d0d0d;
+            color: #ffffff;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            letter-spacing: 0.2px;
+            line-height: 1.2;
+            padding: 8px 12px;
             border-radius: 6px;
             white-space: nowrap;
             opacity: 0;
             pointer-events: none;
-            transition: opacity 0.2s ease;
+            transition: opacity 0.18s ease;
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: 0 4px 14px rgba(0,0,0,0.35);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
         }
         .fab:hover .fab-label { opacity: 1; }
 
@@ -293,7 +287,9 @@
         .modal-body .form-group label { display: block; font-size: 12px; font-weight: 600; color: #555; margin-bottom: 4px; }
         .modal-body .form-group input, .modal-body .form-group select, .modal-body .form-group textarea { width: 100%; padding: 8px 12px; border: 2px solid #e8ecf1; border-radius: 8px; font-size: 13px; font-family: inherit; transition: all 0.3s ease; background: #fafbfc; }
         .modal-body .form-group input:focus, .modal-body .form-group select:focus, .modal-body .form-group textarea:focus { outline: none; border-color: #4fc3f7; box-shadow: 0 0 0 3px rgba(79,195,247,0.15); }
+        .modal-body .form-group input[readonly] { background: #f0f2f5; color: #666; cursor: not-allowed; border-color: #e0e4ea; }
         .modal-body .form-group textarea { min-height: 60px; resize: vertical; }
+        .modal-body .form-group small.help { display: block; font-size: 11px; color: #888; margin-top: 4px; }
         .modal-footer { padding: 14px 20px; border-top: 1px solid #e8ecf1; display: flex; justify-content: flex-end; gap: 8px; }
 
         /* ===== TOAST ===== */
@@ -603,19 +599,16 @@
         var TRANSACTION_TYPES = ['Credit', 'Debit', 'Outflow'];
         var FREQUENCIES = ['One Time', 'Monthly', 'Quarterly', 'Half-Yearly', 'Yearly', 'On Demand'];
 
+        var ACCOUNT_PREFIX_MAP = {
+            'Income': 'INC', 'Investment': 'INV', 'Cashflow': 'CSH',
+            'Temporary': 'TMP', 'Asset': 'AST', 'Liability': 'LIA'
+        };
+
+        // Default fields for each collection (IDs are auto-generated, so excluded)
         var DEFAULT_FIELDS = {
-            accounts: [
-                'accountId', 'accountName', 'accountType', 'frequency',
-                'defaultAmount', 'openingBalance', 'currentBalance',
-                'targetAmount', 'notes'
-            ],
-            transactions: [
-                'transactionId', 'date', 'accountId', 'category',
-                'amount', 'transactionType', 'notes'
-            ],
-            categories: [
-                'categoryId', 'name'
-            ]
+            accounts: ['accountName', 'accountType', 'frequency', 'defaultAmount', 'openingBalance', 'currentBalance', 'targetAmount', 'notes'],
+            transactions: ['date', 'accountId', 'category', 'amount', 'transactionType', 'notes'],
+            categories: ['name']
         };
 
         var LS_KEY_DEFAULT_ACCOUNT = 'default_cashflow_account';
@@ -632,6 +625,8 @@
         var selectedDocId = null;
         var isEditing = false;
         var quickAddMode = false;
+        // While editing a transaction, we keep the original doc here (fetched fresh)
+        var editingTransactionOriginal = null;
 
         var cachedAccounts = [];
         var cachedCategories = [];
@@ -683,6 +678,18 @@
             return yy * 10000 + mm * 100 + dd;
         }
 
+        // Convert DD/MM/YY → YYYY-MM-DD for <input type="date">
+        function dateToInputFormat(dateStr) {
+            if (!dateStr) return '';
+            var parts = dateStr.split('/');
+            if (parts.length !== 3) return '';
+            var dd = String(parts[0]).padStart(2, '0');
+            var mm = String(parts[1]).padStart(2, '0');
+            var yy = parseInt(parts[2], 10);
+            if (yy < 100) yy += 2000;
+            return yy + '-' + mm + '-' + dd;
+        }
+
         function togglePasswordVisibility() {
             var input = document.getElementById('loginPassword');
             var icon = document.querySelector('.password-toggle i');
@@ -698,19 +705,76 @@
         }
 
         // ============================================================
-        // KEEP SIGNED IN — persist user preference in localStorage
+        // ID GENERATION
+        // ============================================================
+        function nextAccountIdFromList(prefix, existingList) {
+            var maxNum = 0;
+            (existingList || []).forEach(function(item) {
+                var id = item.accountId || item._id || '';
+                if (id.indexOf(prefix) === 0) {
+                    var n = parseInt(id.replace(prefix, ''), 10);
+                    if (!isNaN(n) && n > maxNum) maxNum = n;
+                }
+            });
+            return prefix + String(maxNum + 1).padStart(3, '0');
+        }
+
+        function nextTransactionIdFromList(existingList) {
+            var maxNum = 0;
+            (existingList || []).forEach(function(item) {
+                var id = item.transactionId || item._id || '';
+                if (id.indexOf('TX') === 0) {
+                    var n = parseInt(id.replace('TX', ''), 10);
+                    if (!isNaN(n) && n > maxNum) maxNum = n;
+                }
+            });
+            return 'TX' + String(maxNum + 1).padStart(3, '0');
+        }
+
+        function fetchAllAccounts() {
+            if (!currentUserId) return Promise.resolve([]);
+            return db.collection('users').doc(currentUserId).collection('accounts').get()
+                .then(function(snap) {
+                    var list = [];
+                    snap.forEach(function(doc) { var d = doc.data(); d._id = doc.id; list.push(d); });
+                    return list;
+                });
+        }
+
+        function fetchAllTransactions() {
+            if (!currentUserId) return Promise.resolve([]);
+            return db.collection('users').doc(currentUserId).collection('transactions').get()
+                .then(function(snap) {
+                    var list = [];
+                    snap.forEach(function(doc) { var d = doc.data(); d._id = doc.id; list.push(d); });
+                    return list;
+                });
+        }
+
+        // Fetch a single doc fresh from Firestore
+        function fetchSingleDoc(collectionName, docId) {
+            if (!currentUserId) return Promise.resolve(null);
+            return db.collection('users').doc(currentUserId)
+                .collection(collectionName).doc(docId).get()
+                .then(function(doc) {
+                    if (!doc.exists) return null;
+                    var d = doc.data();
+                    d._id = doc.id;
+                    return d;
+                });
+        }
+
+        // ============================================================
+        // KEEP SIGNED IN
         // ============================================================
         function loadKeepSignedInPreference() {
-            try {
-                var v = localStorage.getItem(LS_KEY_KEEP_SIGNED_IN);
-                return v === 'true';
-            } catch(e) { return false; }
+            try { return localStorage.getItem(LS_KEY_KEEP_SIGNED_IN) === 'true'; }
+            catch(e) { return false; }
         }
         function saveKeepSignedInPreference(value) {
             try { localStorage.setItem(LS_KEY_KEEP_SIGNED_IN, value ? 'true' : 'false'); } catch(e) {}
         }
 
-        // Restore checkbox state on page load (default: unchecked)
         (function initKeepSignedInCheckbox() {
             var cb = document.getElementById('keepSignedIn');
             if (cb) cb.checked = loadKeepSignedInPreference();
@@ -733,20 +797,14 @@
             signInBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing In...';
             signInBtn.disabled = true;
 
-            // Persist the checkbox preference
             saveKeepSignedInPreference(keepSignedIn);
 
-            // Set Firebase Auth persistence BEFORE sign-in:
-            // Checked   → LOCAL (survives browser close/reopen)
-            // Unchecked → SESSION (cleared when browser tab/window closes)
             var persistence = keepSignedIn
                 ? firebase.auth.Auth.Persistence.LOCAL
                 : firebase.auth.Auth.Persistence.SESSION;
 
             auth.setPersistence(persistence)
-                .then(function() {
-                    return auth.signInWithEmailAndPassword(email, password);
-                })
+                .then(function() { return auth.signInWithEmailAndPassword(email, password); })
                 .then(function(userCredential) {
                     var user = userCredential.user;
                     currentUserEmail = user.email;
@@ -946,7 +1004,6 @@
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
             btn.disabled = true;
 
-            // Note: re-authentication for verification. This preserves existing persistence.
             auth.signInWithEmailAndPassword(currentUserEmail, pw)
                 .then(function() {
                     var cb = passwordModalCallback;
@@ -1397,36 +1454,219 @@
         }
 
         // ============================================================
-        // MODAL — add/edit
+        // MODAL — ADD
         // ============================================================
         function showAddModal() {
             if (!currentUserId) { showToast('Please sign in first', 'warning'); return; }
             isEditing = false;
             selectedDocId = null;
             quickAddMode = false;
+            editingTransactionOriginal = null;
             document.getElementById('modalTitle').textContent = 'Add New ' + COLLECTION_NAMES[currentCollection].label;
             generateForm(null, null);
             document.getElementById('modalOverlay').classList.add('active');
         }
 
+        // ============================================================
+        // MODAL — EDIT (fetch fresh from Firestore, no re-demand of fixed fields)
+        // ============================================================
         function editDocument(docId) {
             if (!currentUserId) { showToast('Please sign in first', 'warning'); return; }
             isEditing = true;
             selectedDocId = docId;
             quickAddMode = false;
+
             document.getElementById('modalTitle').textContent = 'Edit ' + COLLECTION_NAMES[currentCollection].label;
-            var item = currentData.find(function(d) { return d._id === docId; });
-            if (item) {
-                generateForm(item, null);
-                document.getElementById('modalOverlay').classList.add('active');
-            } else { showToast('Document not found', 'error'); }
+
+            // Show loading spinner inside modal
+            document.getElementById('modalBody').innerHTML =
+                '<div class="loading"><div class="spinner"></div></div>';
+            document.getElementById('modalOverlay').classList.add('active');
+
+            // Fetch the fresh doc from Firestore (not the cache)
+            fetchSingleDoc(currentCollection, docId).then(function(docData) {
+                if (!docData) {
+                    closeModal();
+                    showToast('Document not found', 'error');
+                    return;
+                }
+
+                if (currentCollection === 'transactions') {
+                    editingTransactionOriginal = docData;
+                    generateTransactionEditForm(docData);
+                } else if (currentCollection === 'accounts') {
+                    generateAccountEditForm(docData);
+                } else {
+                    // categories fallback
+                    generateForm(docData, null);
+                }
+            }).catch(function(err) {
+                closeModal();
+                showToast('Error loading document: ' + err.message, 'error');
+            });
         }
 
+        // ---- Transaction Edit Form (account + ID read-only, category conditional) ----
+        function generateTransactionEditForm(t) {
+            var container = document.getElementById('modalBody');
+
+            var accName = '—';
+            var accType = '';
+            var acc = cachedAccounts.find(function(a) { return a.accountId === t.accountId; });
+            if (acc) { accName = acc.accountName || acc.accountId; accType = acc.accountType || ''; }
+
+            var isCashflowLike = (accType === 'Cashflow' || accType === 'Temporary');
+
+            var html = '';
+
+            // Read-only Transaction ID
+            html += '<div class="form-group">'
+                +   '<label>Transaction ID</label>'
+                +   '<input type="text" value="' + (t.transactionId || t._id || '') + '" readonly>'
+                +   '<small class="help">Transaction ID cannot be changed.</small>'
+                + '</div>';
+
+            // Read-only Account
+            html += '<div class="form-group">'
+                +   '<label>Account</label>'
+                +   '<input type="text" value="' + accName + (accType ? ' (' + accType + ')' : '') + '" readonly>'
+                +   '<small class="help">Account cannot be changed on an existing transaction.</small>'
+                + '</div>';
+
+            // Date (editable) — convert DD/MM/YY → YYYY-MM-DD
+            var dateValue = dateToInputFormat(t.date);
+            html += '<div class="form-group">'
+                +   '<label>Date</label>'
+                +   '<input type="date" id="field_date" value="' + dateValue + '">'
+                + '</div>';
+
+            // Category (only for cashflow-like accounts)
+            if (isCashflowLike) {
+                html += '<div class="form-group">'
+                    +   '<label>Category *</label>'
+                    +   '<select id="field_category">';
+                html += '<option value="">Select Category</option>';
+                cachedCategories
+                    .slice()
+                    .sort(function(a, b) { return (a.name || '').localeCompare(b.name || ''); })
+                    .forEach(function(c) {
+                        var cname = c.name || c.categoryId;
+                        var sel = (cname === t.category) ? ' selected' : '';
+                        html += '<option value="' + cname + '"' + sel + '>' + cname + '</option>';
+                    });
+                html += '</select></div>';
+            }
+
+            // Transaction Type (editable)
+            html += '<div class="form-group">'
+                +   '<label>Transaction Type</label>'
+                +   '<select id="field_transactionType">';
+            TRANSACTION_TYPES.forEach(function(tt) {
+                html += '<option value="' + tt + '"' + (tt === t.transactionType ? ' selected' : '') + '>' + tt + '</option>';
+            });
+            html += '</select></div>';
+
+            // Amount (editable)
+            html += '<div class="form-group">'
+                +   '<label>Amount</label>'
+                +   '<input type="number" id="field_amount" step="any" value="' + (t.amount !== undefined ? t.amount : '') + '">'
+                + '</div>';
+
+            // Notes (editable)
+            html += '<div class="form-group">'
+                +   '<label>Notes</label>'
+                +   '<textarea id="field_notes">' + (t.notes || '') + '</textarea>'
+                + '</div>';
+
+            container.dataset.fields = JSON.stringify(
+                ['transactionId', 'accountId', 'date', 'category', 'transactionType', 'amount', 'notes']
+            );
+            container.dataset.editMode = 'transaction';
+            container.innerHTML = html;
+        }
+
+        // ---- Account Edit Form (accountId read-only, mutable fields editable) ----
+        function generateAccountEditForm(a) {
+            var container = document.getElementById('modalBody');
+
+            var html = '';
+
+            // Read-only Account ID
+            html += '<div class="form-group">'
+                +   '<label>Account ID</label>'
+                +   '<input type="text" value="' + (a.accountId || a._id || '') + '" readonly>'
+                +   '<small class="help">Account ID cannot be changed.</small>'
+                + '</div>';
+
+            // Account Name (editable)
+            html += '<div class="form-group">'
+                +   '<label>Account Name</label>'
+                +   '<input type="text" id="field_accountName" value="' + (a.accountName || '') + '">'
+                + '</div>';
+
+            // Account Type — display read-only to avoid re-prompting.
+            // (Changing type would change ID prefix; that's not allowed.)
+            html += '<div class="form-group">'
+                +   '<label>Account Type</label>'
+                +   '<input type="text" value="' + (a.accountType || '') + '" readonly>'
+                +   '<small class="help">Account Type cannot be changed after creation.</small>'
+                + '</div>';
+
+            // Frequency (editable)
+            html += '<div class="form-group">'
+                +   '<label>Frequency</label>'
+                +   '<select id="field_frequency">';
+            FREQUENCIES.forEach(function(f) {
+                html += '<option value="' + f + '"' + (f === a.frequency ? ' selected' : '') + '>' + f + '</option>';
+            });
+            html += '</select></div>';
+
+            // Default Amount
+            html += '<div class="form-group">'
+                +   '<label>Default Amount</label>'
+                +   '<input type="number" id="field_defaultAmount" step="any" value="' + (a.defaultAmount !== undefined ? a.defaultAmount : 0) + '">'
+                + '</div>';
+
+            // Opening Balance
+            html += '<div class="form-group">'
+                +   '<label>Opening Balance</label>'
+                +   '<input type="number" id="field_openingBalance" step="any" value="' + (a.openingBalance !== undefined ? a.openingBalance : 0) + '">'
+                + '</div>';
+
+            // Current Balance
+            html += '<div class="form-group">'
+                +   '<label>Current Balance</label>'
+                +   '<input type="number" id="field_currentBalance" step="any" value="' + (a.currentBalance !== undefined ? a.currentBalance : 0) + '">'
+                + '</div>';
+
+            // Target Amount
+            html += '<div class="form-group">'
+                +   '<label>Target Amount</label>'
+                +   '<input type="number" id="field_targetAmount" step="any" value="' + (a.targetAmount !== undefined ? a.targetAmount : 0) + '">'
+                + '</div>';
+
+            // Notes
+            html += '<div class="form-group">'
+                +   '<label>Notes</label>'
+                +   '<textarea id="field_notes">' + (a.notes || '') + '</textarea>'
+                + '</div>';
+
+            container.dataset.fields = JSON.stringify(
+                ['accountId', 'accountName', 'accountType', 'frequency', 'defaultAmount', 'openingBalance', 'currentBalance', 'targetAmount', 'notes']
+            );
+            container.dataset.editMode = 'account';
+            container.innerHTML = html;
+        }
+
+        // ============================================================
+        // CATEGORY QUICK-ADD MODAL
+        // ============================================================
         function showAddCategoryModal() {
             if (!currentUserId) { showToast('Please sign in first', 'warning'); return; }
             isEditing = false;
             selectedDocId = null;
             quickAddMode = false;
+            editingTransactionOriginal = null;
             document.getElementById('modalTitle').textContent = 'Add New Category';
             var html = ''
                 + '<div class="form-group">'
@@ -1437,6 +1677,7 @@
                 +   'Category ID will be auto-generated from the name (lowercase, spaces → underscores).'
                 + '</div>';
             document.getElementById('modalBody').dataset.fields = JSON.stringify(['__category_special__']);
+            document.getElementById('modalBody').dataset.editMode = '';
             document.getElementById('modalBody').innerHTML = html;
             document.getElementById('modalOverlay').classList.add('active');
             setTimeout(function() {
@@ -1446,22 +1687,36 @@
         }
 
         // ============================================================
-        // GENERATE FORM
+        // GENERATE FORM (Add mode only — Edit uses dedicated functions above)
         // ============================================================
         function generateForm(data, overrideFields) {
             var container = document.getElementById('modalBody');
+            container.dataset.editMode = '';
+
             var fields;
             if (overrideFields) {
                 fields = overrideFields;
-            } else if (data) {
-                fields = Object.keys(data).filter(function(key) {
-                    return !['_id', 'createdAt', 'updatedAt'].includes(key);
-                });
             } else {
                 fields = DEFAULT_FIELDS[currentCollection] || ['id', 'name'];
             }
 
             var html = '';
+
+            // Add-mode informational read-only ID field at the top
+            if (currentCollection === 'accounts') {
+                html += '<div class="form-group">'
+                    +   '<label>Account ID</label>'
+                    +   '<input type="text" value="Auto-generated on save" readonly>'
+                    +   '<small class="help">Format: PREFIX### (INC, INV, CSH, TMP, AST, LIA). Generated from Account Type.</small>'
+                    + '</div>';
+            } else if (currentCollection === 'transactions') {
+                html += '<div class="form-group">'
+                    +   '<label>Transaction ID</label>'
+                    +   '<input type="text" value="Auto-generated on save" readonly>'
+                    +   '<small class="help">Format: TX### (e.g. TX001). Generated automatically.</small>'
+                    + '</div>';
+            }
+
             fields.forEach(function(key) {
                 var value = data ? (data[key] !== undefined ? data[key] : '') : '';
                 var inputType = 'text';
@@ -1505,10 +1760,7 @@
                     });
                 } else if (key === 'notes') {
                     inputType = 'textarea';
-                } else if (
-                    key.toLowerCase().indexOf('amount') !== -1 ||
-                    key.toLowerCase().indexOf('balance') !== -1
-                ) {
+                } else if (key.toLowerCase().indexOf('amount') !== -1 || key.toLowerCase().indexOf('balance') !== -1) {
                     inputType = 'number';
                 } else if (key === 'date') {
                     inputType = 'date';
@@ -1548,7 +1800,7 @@
         }
 
         // ============================================================
-        // TRANSACTION ACCOUNT → CATEGORY
+        // TRANSACTION ACCOUNT → CATEGORY (Add mode only)
         // ============================================================
         function onTxAccountChange(skipReset) {
             var accEl = document.getElementById('field_accountId');
@@ -1600,6 +1852,7 @@
             isEditing = false;
             selectedDocId = null;
             quickAddMode = true;
+            editingTransactionOriginal = null;
             document.getElementById('modalTitle').textContent = '⚡ Quick Add Transaction';
 
             var defaultId = ensureDefaultAccount();
@@ -1611,7 +1864,7 @@
                 amount: '',
                 notes: ''
             };
-            var orderedFields = ['transactionId', 'date', 'accountId', 'category', 'transactionType', 'amount', 'notes'];
+            var orderedFields = ['date', 'accountId', 'category', 'transactionType', 'amount', 'notes'];
             generateForm(draft, orderedFields);
             document.getElementById('modalOverlay').classList.add('active');
 
@@ -1626,8 +1879,10 @@
             if (!currentUserId) { showToast('Please sign in first', 'warning'); return; }
 
             var container = document.getElementById('modalBody');
+            var editMode = container.dataset.editMode || '';
             var fields = JSON.parse(container.dataset.fields || '[]');
 
+            // ===== SPECIAL: Category quick-add =====
             if (fields.length === 1 && fields[0] === '__category_special__') {
                 var name = (document.getElementById('catNameInput').value || '').trim();
                 if (!name) { showToast('Please enter a category name', 'warning'); return; }
@@ -1643,6 +1898,7 @@
                 return;
             }
 
+            // ===== Collect form values =====
             var data = {};
             fields.forEach(function(key) {
                 var el = document.getElementById('field_' + key);
@@ -1653,48 +1909,148 @@
                 }
             });
 
-            var info = COLLECTION_NAMES[currentCollection];
-            var idField = info.idField;
-            var docId = data[idField];
-            if (!docId) { docId = isEditing ? selectedDocId : null; }
-            if (!docId) { showToast('Please provide a document ID (' + idField + ')', 'warning'); return; }
+            // ===== EDIT MODE (Transaction or Account) =====
+            if (isEditing) {
+                if (editMode === 'transaction') {
+                    // Convert YYYY-MM-DD → DD/MM/YY
+                    if (data.date && data.date.indexOf('-') !== -1) {
+                        var parts = data.date.split('-');
+                        if (parts.length === 3) {
+                            var yy = parts[0].slice(-2);
+                            data.date = parts[2] + '/' + parts[1] + '/' + yy;
+                        }
+                    }
 
+                    // Validate category presence for cashflow-like accounts
+                    var orig = editingTransactionOriginal || {};
+                    var acc = cachedAccounts.find(function(a) { return a.accountId === orig.accountId; });
+                    var isCashflowLike = acc && (acc.accountType === 'Cashflow' || acc.accountType === 'Temporary');
+
+                    if (isCashflowLike && !data.category) {
+                        showToast('Category is required for this account', 'warning');
+                        return;
+                    }
+                    if (!isCashflowLike) {
+                        data.category = '';   // preserve empty for non-category accounts
+                    }
+
+                    // Build update payload — do NOT touch transactionId, accountId, createdAt
+                    var payload = {
+                        date: data.date,
+                        category: isCashflowLike ? data.category : '',
+                        amount: data.amount,
+                        transactionType: data.transactionType,
+                        notes: data.notes
+                    };
+
+                    var userRef = db.collection('users').doc(currentUserId);
+                    userRef.collection('transactions').doc(selectedDocId).update(payload)
+                        .then(function() {
+                            closeModal();
+                            showToast('Transaction updated successfully!', 'success');
+                            preloadCache().then(function() { loadCollection(); });
+                        })
+                        .catch(function(error) { showToast('Error updating: ' + error.message, 'error'); });
+                    return;
+                }
+
+                if (editMode === 'account') {
+                    // Account update — never touch accountId or accountType
+                    var accPayload = {
+                        accountName: data.accountName,
+                        frequency: data.frequency,
+                        defaultAmount: data.defaultAmount,
+                        openingBalance: data.openingBalance,
+                        currentBalance: data.currentBalance,
+                        targetAmount: data.targetAmount,
+                        notes: data.notes
+                    };
+
+                    var userRef2 = db.collection('users').doc(currentUserId);
+                    userRef2.collection('accounts').doc(selectedDocId).update(accPayload)
+                        .then(function() {
+                            closeModal();
+                            showToast('Account updated successfully!', 'success');
+                            preloadCache().then(function() { loadCollection(); });
+                        })
+                        .catch(function(error) { showToast('Error updating: ' + error.message, 'error'); });
+                    return;
+                }
+
+                // Fallback for generic edit (categories)
+                var userRef3 = db.collection('users').doc(currentUserId);
+                userRef3.collection(currentCollection).doc(selectedDocId).update(data)
+                    .then(function() {
+                        closeModal();
+                        showToast('Document updated successfully!', 'success');
+                        preloadCache().then(function() { loadCollection(); });
+                    })
+                    .catch(function(error) { showToast('Error updating: ' + error.message, 'error'); });
+                return;
+            }
+
+            // ===== ADD MODE =====
+            // Convert date for transactions
             if (currentCollection === 'transactions') {
+                if (data.date && data.date.indexOf('-') !== -1) {
+                    var parts2 = data.date.split('-');
+                    if (parts2.length === 3) {
+                        var yy2 = parts2[0].slice(-2);
+                        data.date = parts2[2] + '/' + parts2[1] + '/' + yy2;
+                    }
+                }
+
+                // Validate
                 if (!data.accountId) { showToast('Please select an account', 'warning'); return; }
-                var acc = cachedAccounts.find(function(a) { return a.accountId === data.accountId; });
-                if (acc && (acc.accountType === 'Cashflow' || acc.accountType === 'Temporary')) {
-                    if (!data.category) { showToast('Category is required for Cashflow/Temporary accounts', 'warning'); return; }
+                var acc2 = cachedAccounts.find(function(a) { return a.accountId === data.accountId; });
+                if (acc2 && (acc2.accountType === 'Cashflow' || acc2.accountType === 'Temporary')) {
+                    if (!data.category) { showToast('Category is required for this account', 'warning'); return; }
                 } else {
                     data.category = '';
                     if (!data.transactionType || data.transactionType === 'Credit' || data.transactionType === 'Debit') {
                         data.transactionType = 'Outflow';
                     }
                 }
-                if (data.date && data.date.indexOf('-') !== -1) {
-                    var parts = data.date.split('-');
-                    if (parts.length === 3) {
-                        var yy = parts[0].slice(-2);
-                        data.date = parts[2] + '/' + parts[1] + '/' + yy;
-                    }
-                }
             }
 
-            var userRef = db.collection('users').doc(currentUserId);
-            var docRef = userRef.collection(currentCollection).doc(docId);
+            var userRef4 = db.collection('users').doc(currentUserId);
 
-            if (isEditing) {
-                docRef.update(data).then(function() {
+            // Auto-ID for accounts
+            if (currentCollection === 'accounts') {
+                if (!data.accountType) { showToast('Please select an account type', 'warning'); return; }
+                var prefix = ACCOUNT_PREFIX_MAP[data.accountType] || 'ACC';
+
+                fetchAllAccounts().then(function(allAccounts) {
+                    var newId = nextAccountIdFromList(prefix, allAccounts);
+                    data.accountId = newId;
+                    return userRef4.collection('accounts').doc(newId).set(data);
+                }).then(function() {
                     closeModal();
-                    showToast('Document updated successfully!', 'success');
+                    showToast('Account added successfully!', 'success');
                     preloadCache().then(function() { loadCollection(); });
-                }).catch(function(error) { showToast('Error updating: ' + error.message, 'error'); });
-            } else {
-                docRef.set(data).then(function() {
-                    closeModal();
-                    showToast('Document created successfully!', 'success');
-                    preloadCache().then(function() { loadCollection(); });
-                }).catch(function(error) { showToast('Error creating: ' + error.message, 'error'); });
+                }).catch(function(error) {
+                    showToast('Error creating account: ' + error.message, 'error');
+                });
+                return;
             }
+
+            // Auto-ID for transactions
+            if (currentCollection === 'transactions') {
+                fetchAllTransactions().then(function(allTx) {
+                    var newId = nextTransactionIdFromList(allTx);
+                    data.transactionId = newId;
+                    return userRef4.collection('transactions').doc(newId).set(data);
+                }).then(function() {
+                    closeModal();
+                    showToast('Transaction added successfully!', 'success');
+                    preloadCache().then(function() { loadCollection(); });
+                }).catch(function(error) {
+                    showToast('Error creating transaction: ' + error.message, 'error');
+                });
+                return;
+            }
+
+            showToast('Unknown collection type', 'error');
         }
 
         // ============================================================
@@ -1733,6 +2089,7 @@
         function closeModal() {
             document.getElementById('modalOverlay').classList.remove('active');
             quickAddMode = false;
+            editingTransactionOriginal = null;
         }
 
         document.getElementById('modalOverlay').addEventListener('click', function(e) {
@@ -1852,7 +2209,7 @@
         });
 
         // ============================================================
-        // INIT (no anonymous auth; user must sign in)
+        // INIT
         // ============================================================
         updateAuthUI();
 
