@@ -5,21 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Finance Manager - Firestore Admin</title>
 
-    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', sans-serif; background: #f0f2f5; color: #1a1a2e; min-height: 100vh; }
 
+        /* ===== HEADER ===== */
         .app-header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); padding: 16px 24px; position: sticky; top: 0; z-index: 1000; box-shadow: 0 4px 20px rgba(0,0,0,0.3); }
         .app-header .container { max-width: 1400px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
         .app-header .logo { display: flex; align-items: center; gap: 12px; }
@@ -30,6 +26,7 @@
         .user-badge { display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.1); padding: 6px 14px; border-radius: 20px; color: #fff; font-size: 13px; }
         .user-badge i { font-size: 14px; color: #4fc3f7; }
 
+        /* ===== BUTTONS ===== */
         .btn { padding: 8px 18px; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 6px; }
         .btn-primary { background: linear-gradient(135deg, #4fc3f7, #2196f3); color: #fff; }
         .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(33,150,243,0.4); }
@@ -40,8 +37,20 @@
         .btn-outline { background: transparent; border: 2px solid rgba(255,255,255,0.3); color: #fff; }
         .btn-outline:hover { background: rgba(255,255,255,0.1); border-color: #fff; }
         .btn-sm { padding: 5px 12px; font-size: 12px; border-radius: 6px; }
+        .btn-icon-round {
+            width: 34px;
+            height: 34px;
+            padding: 0;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+
         .app-main { max-width: 1400px; margin: 0 auto; padding: 20px 24px; }
 
+        /* ===== LOGIN ===== */
         .login-section { max-width: 420px; margin: 40px auto; padding: 30px 32px; background: #fff; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
         .login-section h2 { text-align: center; margin-bottom: 20px; color: #1a1a2e; font-size: 22px; }
         .login-section h2 i { color: #4fc3f7; }
@@ -50,29 +59,14 @@
         .login-section .form-group input { width: 100%; padding: 10px 14px; border: 2px solid #e8ecf1; border-radius: 10px; font-size: 14px; transition: all 0.3s ease; }
         .login-section .form-group input:focus { outline: none; border-color: #4fc3f7; box-shadow: 0 0 0 3px rgba(79,195,247,0.15); }
         .login-section .btn { width: 100%; justify-content: center; margin-top: 8px; padding: 12px; }
-        .login-section .btn-outline { color: #333; border-color: #ccc; background: #fafbfc; }
-        .login-section .btn-outline:hover { background: #f0f2f5; }
         .login-section .error-message { color: #d32f2f; font-size: 13px; margin-top: 10px; text-align: center; }
-        .login-section .divider { text-align: center; margin: 16px 0; color: #999; font-size: 13px; position: relative; }
-        .login-section .divider::before, .login-section .divider::after { content: ''; position: absolute; top: 50%; width: 40%; height: 1px; background: #e8ecf1; }
-        .login-section .divider::before { left: 0; }
-        .login-section .divider::after { right: 0; }
 
-        /* ===== NET WORTH STATS (mirrors app Dashboard) ===== */
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 20px; }
-        .stat-card { background: #fff; border-radius: 14px; padding: 16px 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); transition: all 0.3s ease; border: 1px solid rgba(0,0,0,0.04); }
-        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.08); }
-        .stat-card .stat-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; margin-bottom: 8px; }
-        .stat-card .stat-icon.blue { background: #e3f2fd; color: #1976d2; }
-        .stat-card .stat-icon.green { background: #e8f5e9; color: #388e3c; }
-        .stat-card .stat-icon.orange { background: #fff3e0; color: #f57c00; }
-        .stat-card .stat-icon.red { background: #ffebee; color: #d32f2f; }
-        .stat-card .stat-icon.purple { background: #f3e5f5; color: #7b1fa2; }
-        .stat-card .stat-icon.teal { background: #e0f2f1; color: #00695c; }
-        .stat-card .stat-number { font-size: 24px; font-weight: 700; color: #1a1a2e; line-height: 1.2; }
-        .stat-card .stat-label { font-size: 12px; color: #888; font-weight: 500; margin-top: 2px; }
+        .password-wrapper { position: relative; }
+        .password-wrapper input { padding-right: 40px !important; }
+        .password-toggle { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #999; cursor: pointer; font-size: 16px; }
+        .password-toggle:hover { color: #333; }
 
-        /* Net Worth hero card */
+        /* ===== NET WORTH ===== */
         .networth-hero {
             background: linear-gradient(135deg, #0F1D4B 0%, #1a2a5e 100%);
             border-radius: 16px;
@@ -86,13 +80,110 @@
         .networth-hero .value { font-size: 34px; font-weight: 800; margin: 6px 0 2px; }
         .networth-hero .delta { font-size: 12px; font-weight: 600; }
 
-        .toolbar { background: #fff; border-radius: 14px; padding: 14px 18px; margin-bottom: 20px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border: 1px solid rgba(0,0,0,0.04); }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 20px; }
+        .stat-card { background: #fff; border-radius: 14px; padding: 16px 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); transition: all 0.3s ease; border: 1px solid rgba(0,0,0,0.04); }
+        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.08); }
+        .stat-card .stat-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; margin-bottom: 8px; }
+        .stat-card .stat-icon.blue { background: #e3f2fd; color: #1976d2; }
+        .stat-card .stat-icon.green { background: #e8f5e9; color: #388e3c; }
+        .stat-card .stat-icon.orange { background: #fff3e0; color: #f57c00; }
+        .stat-card .stat-icon.red { background: #ffebee; color: #d32f2f; }
+        .stat-card .stat-icon.purple { background: #f3e5f5; color: #7b1fa2; }
+        .stat-card .stat-icon.teal { background: #e0f2f1; color: #00695c; }
+        .stat-card .stat-number { font-size: 24px; font-weight: 700; color: #1a1a2e; line-height: 1.2; }
+        .stat-card .stat-label { font-size: 12px; color: #888; font-weight: 500; margin-top: 2px; }
+
+        /* ===== TOOLBAR ===== */
+        .toolbar { background: #fff; border-radius: 14px; padding: 14px 18px; margin-bottom: 12px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border: 1px solid rgba(0,0,0,0.04); }
         .toolbar .filter-group { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
         .toolbar select, .toolbar input { padding: 7px 12px; border: 2px solid #e8ecf1; border-radius: 8px; font-size: 13px; font-family: inherit; background: #fafbfc; transition: all 0.3s ease; min-width: 120px; }
         .toolbar select:focus, .toolbar input:focus { outline: none; border-color: #4fc3f7; box-shadow: 0 0 0 3px rgba(79,195,247,0.15); }
-        .toolbar .action-group { display: flex; gap: 6px; flex-wrap: wrap; }
+        .toolbar .action-group { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
 
-        .table-container { background: #fff; border-radius: 14px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border: 1px solid rgba(0,0,0,0.04); margin-bottom: 90px; }
+        /* Settings icon button (Transactions view) */
+        .settings-btn {
+            background: #f0f7ff;
+            color: #0d47a1;
+            border: 2px solid #90caf9;
+            border-radius: 50%;
+            width: 34px;
+            height: 34px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.25s ease;
+        }
+        .settings-btn:hover { background: #e3f2fd; transform: rotate(60deg); }
+        .settings-btn.active { display: inline-flex; }
+
+        /* ===== TRANSACTIONS SUB-HEADER (toggles + month) ===== */
+        .tx-subheader {
+            display: none;
+            background: #fff;
+            border-radius: 14px;
+            padding: 12px 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            border: 1px solid rgba(0,0,0,0.04);
+            flex-wrap: wrap;
+            gap: 10px;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .tx-subheader.active { display: flex; }
+        .toggle-group { display: flex; gap: 0; background: #f0f2f5; border-radius: 10px; padding: 3px; }
+        .toggle-btn {
+            padding: 7px 16px;
+            border: none;
+            background: transparent;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #666;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: inherit;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .toggle-btn:hover { color: #333; }
+        .toggle-btn.active { background: #fff; color: #0077b6; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+        .toggle-btn.active i { color: #0077b6; }
+
+        .month-picker-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .month-picker-wrap.hidden { display: none; }
+        .month-picker-wrap label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #555;
+        }
+        .month-picker-wrap select,
+        .month-picker-wrap input[type="month"] {
+            padding: 7px 12px;
+            border: 2px solid #e8ecf1;
+            border-radius: 8px;
+            font-size: 13px;
+            font-family: inherit;
+            background: #fafbfc;
+            transition: all 0.3s ease;
+        }
+        .month-picker-wrap select:focus,
+        .month-picker-wrap input[type="month"]:focus {
+            outline: none; border-color: #4fc3f7;
+            box-shadow: 0 0 0 3px rgba(79,195,247,0.15);
+        }
+        .month-picker-wrap input[type="month"] { min-width: 160px; }
+        .month-picker-wrap input[type="month"].hidden { display: none; }
+
+        /* ===== TABLE ===== */
+        .table-container { background: #fff; border-radius: 14px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border: 1px solid rgba(0,0,0,0.04); margin-bottom: 100px; }
         .table-header { padding: 14px 18px; background: #f8f9fc; border-bottom: 1px solid #e8ecf1; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
         .table-header h3 { font-size: 15px; font-weight: 600; color: #1a1a2e; }
         .table-header .badge { background: #e8ecf1; padding: 3px 10px; border-radius: 16px; font-size: 11px; font-weight: 500; color: #666; }
@@ -103,6 +194,7 @@
         table td { padding: 10px 14px; border-bottom: 1px solid #f0f2f5; color: #333; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         table tr:hover td { background: #f8f9fc; }
         .doc-id { font-family: monospace; font-size: 11px; color: #666; background: #f0f2f5; padding: 2px 8px; border-radius: 4px; }
+
         .type-badge { padding: 2px 10px; border-radius: 10px; font-size: 11px; font-weight: 600; }
         .type-badge.income { background: #e8f5e9; color: #2e7d32; }
         .type-badge.investment { background: #e3f2fd; color: #0d47a1; }
@@ -113,11 +205,36 @@
         .type-badge.credit { background: #e8f5e9; color: #2e7d32; }
         .type-badge.debit { background: #ffebee; color: #c62828; }
         .type-badge.outflow { background: #ffebee; color: #c62828; }
+
         .table-actions { display: flex; gap: 4px; justify-content: center; }
         .table-actions .btn-icon { width: 28px; height: 28px; border: none; border-radius: 6px; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; font-size: 12px; background: transparent; color: #888; }
         .table-actions .btn-icon:hover { background: #f0f2f5; color: #333; }
         .table-actions .btn-icon.delete:hover { background: #ffebee; color: #d32f2f; }
         .table-actions .btn-icon.edit:hover { background: #e3f2fd; color: #1976d2; }
+
+        /* Monthly view: group headers + amount coloring */
+        .group-header-row td {
+            background: #f8f9fc !important;
+            font-weight: 700;
+            font-size: 13px;
+            color: #555;
+            padding: 8px 14px;
+            border-top: 1px solid #e8ecf1;
+        }
+        .group-header-row.inflow td { color: #1cc88a; }
+        .group-header-row.outflow td { color: #e74a3b; }
+        .amount-cell.inflow { color: #1cc88a; font-weight: 700; }
+        .amount-cell.outflow { color: #e74a3b; font-weight: 700; }
+
+        /* More button */
+        .more-wrap {
+            display: flex;
+            justify-content: center;
+            padding: 16px;
+            border-top: 1px solid #f0f2f5;
+            background: #fafbfc;
+        }
+        .more-wrap.hidden { display: none; }
 
         .empty-state { text-align: center; padding: 50px 20px; color: #888; }
         .empty-state i { font-size: 40px; color: #ccc; margin-bottom: 12px; }
@@ -127,19 +244,20 @@
         .loading .spinner { width: 32px; height: 32px; border: 3px solid #e8ecf1; border-top-color: #4fc3f7; border-radius: 50%; animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* ===== FLOATING ACTION BUTTONS (mirror Android app) ===== */
+        /* ===== FABs ===== */
         .fab-container {
             position: fixed;
             bottom: 24px;
-            right: 24px;
-            display: flex;
+            left: 24px;
+            display: none;
             flex-direction: row;
             gap: 12px;
             z-index: 1500;
         }
+        .fab-container.active { display: flex; }
         .fab {
-            width: 52px;
-            height: 52px;
+            width: 56px;
+            height: 56px;
             border-radius: 50%;
             border: none;
             cursor: pointer;
@@ -147,21 +265,22 @@
             align-items: center;
             justify-content: center;
             color: #fff;
-            font-size: 18px;
+            font-size: 20px;
             box-shadow: 0 6px 18px rgba(0,0,0,0.25);
             transition: all 0.25s ease;
+            position: relative;
         }
         .fab:hover { transform: translateY(-3px) scale(1.05); box-shadow: 0 10px 26px rgba(0,0,0,0.3); }
         .fab:active { transform: translateY(-1px) scale(1); }
         .fab.primary { background: #0077b6; }
         .fab.quick { background: #e74a3b; }
-        .fab.account { background: #1cc88a; }
+        .fab.category { background: #1cc88a; }
         .fab .fab-label {
             position: absolute;
-            right: 60px;
+            left: 68px;
             top: 50%;
             transform: translateY(-50%);
-            background: rgba(0,0,0,0.8);
+            background: rgba(0,0,0,0.85);
             color: #fff;
             font-size: 12px;
             font-weight: 600;
@@ -174,9 +293,11 @@
         }
         .fab:hover .fab-label { opacity: 1; }
 
+        /* ===== MODAL ===== */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(6px); z-index: 2000; align-items: center; justify-content: center; padding: 20px; }
         .modal-overlay.active { display: flex; }
         .modal { background: #fff; border-radius: 16px; max-width: 600px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3); animation: modalIn 0.3s ease; }
+        .modal.modal-sm { max-width: 440px; }
         @keyframes modalIn { from { transform: scale(0.95) translateY(20px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
         .modal-header { padding: 16px 20px; border-bottom: 1px solid #e8ecf1; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: #fff; z-index: 10; border-radius: 16px 16px 0 0; }
         .modal-header h2 { font-size: 17px; font-weight: 600; }
@@ -188,27 +309,19 @@
         .modal-body .form-group input, .modal-body .form-group select, .modal-body .form-group textarea { width: 100%; padding: 8px 12px; border: 2px solid #e8ecf1; border-radius: 8px; font-size: 13px; font-family: inherit; transition: all 0.3s ease; background: #fafbfc; }
         .modal-body .form-group input:focus, .modal-body .form-group select:focus, .modal-body .form-group textarea:focus { outline: none; border-color: #4fc3f7; box-shadow: 0 0 0 3px rgba(79,195,247,0.15); }
         .modal-body .form-group textarea { min-height: 60px; resize: vertical; }
-        .modal-body .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .modal-footer { padding: 14px 20px; border-top: 1px solid #e8ecf1; display: flex; justify-content: flex-end; gap: 8px; }
 
-        .toast-container { position: fixed; bottom: 20px; left: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; max-width: 380px; }
+        /* ===== TOAST ===== */
+        .toast-container { position: fixed; bottom: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; max-width: 380px; }
         .toast { padding: 12px 16px; border-radius: 10px; color: #fff; font-size: 13px; font-weight: 500; box-shadow: 0 8px 30px rgba(0,0,0,0.2); animation: slideIn 0.4s ease; display: flex; align-items: center; gap: 8px; }
         .toast.success { background: #43a047; }
         .toast.error { background: #d32f2f; }
         .toast.warning { background: #f57c00; }
         .toast.info { background: #1976d2; }
-        @keyframes slideIn { from { transform: translateX(-100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         .toast .toast-close { margin-left: auto; background: none; border: none; color: rgba(255,255,255,0.7); cursor: pointer; font-size: 14px; }
 
-        .info-box { background: #e3f2fd; padding: 12px 16px; border-radius: 8px; margin: 12px 0; font-size: 13px; color: #0d47a1; border-left: 4px solid #2196f3; }
-        .info-box i { margin-right: 8px; }
-        .info-box code { background: rgba(255,255,255,0.8); padding: 2px 8px; border-radius: 4px; font-family: monospace; font-size: 12px; }
-
-        .password-wrapper { position: relative; }
-        .password-wrapper input { padding-right: 40px !important; }
-        .password-toggle { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #999; cursor: pointer; font-size: 16px; }
-        .password-toggle:hover { color: #333; }
-
+        /* ===== RESPONSIVE ===== */
         @media (max-width: 768px) {
             .app-header { padding: 12px 16px; }
             .app-header .logo h1 { font-size: 17px; }
@@ -218,13 +331,16 @@
             .stat-card .stat-number { font-size: 20px; }
             .toolbar { flex-direction: column; align-items: stretch; }
             .toolbar .filter-group select, .toolbar .filter-group input { min-width: 100%; }
-            .modal-body .form-row { grid-template-columns: 1fr; }
+            .tx-subheader { flex-direction: column; align-items: stretch; }
+            .toggle-group { width: 100%; justify-content: center; }
+            .month-picker-wrap { width: 100%; justify-content: space-between; }
             .toast-container { left: 16px; right: 16px; bottom: 100px; }
             table { font-size: 12px; }
             table th, table td { padding: 6px 10px; }
             .networth-hero .value { font-size: 26px; }
-            .fab-container { bottom: 16px; right: 16px; }
-            .fab { width: 48px; height: 48px; font-size: 16px; }
+            .fab-container { bottom: 16px; left: 16px; }
+            .fab { width: 52px; height: 52px; font-size: 18px; }
+            .fab .fab-label { display: none; }
         }
         @media (max-width: 480px) {
             .stats-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
@@ -270,7 +386,7 @@
     <!-- ===== MAIN ===== -->
     <main class="app-main">
 
-        <!-- ===== LOGIN SECTION ===== -->
+        <!-- ===== LOGIN ===== -->
         <div id="loginSection">
             <div class="login-section">
                 <h2><i class="fas fa-lock"></i> Sign In</h2>
@@ -293,12 +409,6 @@
                     <i class="fas fa-sign-in-alt"></i> Sign In
                 </button>
 
-                <div class="divider">or</div>
-
-                <button class="btn btn-outline" onclick="handleAnonymousSignIn()" style="color:#333;border-color:#ccc;background:#fafbfc;">
-                    <i class="fas fa-user-secret"></i> Continue as Guest
-                </button>
-
                 <div id="loginError" class="error-message"></div>
             </div>
         </div>
@@ -306,54 +416,21 @@
         <!-- ===== APP CONTENT ===== -->
         <div id="appContent" style="display:none;">
 
-            <!-- User Info -->
-            <div class="info-box">
-                <i class="fas fa-user"></i>
-                <strong>User:</strong> <code id="currentUserEmail">-</code>
-                <span style="margin-left:16px;">
-                    <i class="fas fa-folder"></i>
-                    <strong>User ID:</strong> <code id="currentUserId">-</code>
-                </span>
-            </div>
-
-            <!-- ===== NET WORTH HERO + BREAKDOWN STATS ===== -->
+            <!-- Net Worth Hero -->
             <div class="networth-hero">
                 <div class="label">NET WORTH</div>
                 <div class="value" id="netWorthValue">₹0</div>
                 <div class="delta" id="netWorthDelta">— Positive</div>
             </div>
 
+            <!-- Breakdown Stats -->
             <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-icon blue"><i class="fas fa-chart-line"></i></div>
-                    <div class="stat-number" id="investmentTotal">₹0</div>
-                    <div class="stat-label">Investment</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon green"><i class="fas fa-university"></i></div>
-                    <div class="stat-number" id="assetTotal">₹0</div>
-                    <div class="stat-label">Asset</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon orange"><i class="fas fa-exchange-alt"></i></div>
-                    <div class="stat-number" id="cashflowTotal">₹0</div>
-                    <div class="stat-label">Cashflow</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon red"><i class="fas fa-file-invoice-dollar"></i></div>
-                    <div class="stat-number" id="liabilityTotal">₹0</div>
-                    <div class="stat-label">Liability</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon teal"><i class="fas fa-wallet"></i></div>
-                    <div class="stat-number" id="temporaryTotal">₹0</div>
-                    <div class="stat-label">Temporary</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon purple"><i class="fas fa-layer-group"></i></div>
-                    <div class="stat-number" id="totalAccounts">0</div>
-                    <div class="stat-label">Accounts</div>
-                </div>
+                <div class="stat-card"><div class="stat-icon blue"><i class="fas fa-chart-line"></i></div><div class="stat-number" id="investmentTotal">₹0</div><div class="stat-label">Investment</div></div>
+                <div class="stat-card"><div class="stat-icon green"><i class="fas fa-university"></i></div><div class="stat-number" id="assetTotal">₹0</div><div class="stat-label">Asset</div></div>
+                <div class="stat-card"><div class="stat-icon orange"><i class="fas fa-exchange-alt"></i></div><div class="stat-number" id="cashflowTotal">₹0</div><div class="stat-label">Cashflow</div></div>
+                <div class="stat-card"><div class="stat-icon red"><i class="fas fa-file-invoice-dollar"></i></div><div class="stat-number" id="liabilityTotal">₹0</div><div class="stat-label">Liability</div></div>
+                <div class="stat-card"><div class="stat-icon teal"><i class="fas fa-wallet"></i></div><div class="stat-number" id="temporaryTotal">₹0</div><div class="stat-label">Temporary</div></div>
+                <div class="stat-card"><div class="stat-icon purple"><i class="fas fa-layer-group"></i></div><div class="stat-number" id="totalAccounts">0</div><div class="stat-label">Accounts</div></div>
             </div>
 
             <!-- Toolbar -->
@@ -366,13 +443,31 @@
                     </select>
                     <input type="text" id="searchInput" placeholder="🔍 Search..." oninput="filterTable()">
                 </div>
+
                 <div class="action-group">
+                    <button class="settings-btn" id="txSettingsBtn" onclick="openTransactionSettings()" title="Transaction Settings">
+                        <i class="fas fa-cog"></i>
+                    </button>
                     <button class="btn btn-success btn-sm" id="toolbarAddBtn" onclick="toolbarAddAction()">
                         <i class="fas fa-plus"></i> <span id="toolbarAddLabel">Add Account</span>
                     </button>
-                    <button class="btn btn-danger btn-sm" onclick="confirmDeleteAll()">
-                        <i class="fas fa-trash"></i> Clear
+                </div>
+            </div>
+
+            <!-- Transactions sub-header (toggles + month picker) -->
+            <div class="tx-subheader" id="txSubheader">
+                <div class="toggle-group">
+                    <button class="toggle-btn" id="toggleAll" onclick="switchTransactionFilter('all')">
+                        <i class="fas fa-list"></i> All Transactions
                     </button>
+                    <button class="toggle-btn" id="toggleMonthly" onclick="switchTransactionFilter('monthly')">
+                        <i class="fas fa-calendar-alt"></i> Monthly Transactions
+                    </button>
+                </div>
+                <div class="month-picker-wrap hidden" id="monthPickerWrap">
+                    <label><i class="fas fa-calendar"></i> Month:</label>
+                    <select id="monthSelect" onchange="onMonthChange()"></select>
+                    <input type="month" id="customMonthInput" class="hidden" onchange="onCustomMonthChange()">
                 </div>
             </div>
 
@@ -386,14 +481,18 @@
                     <div id="loadingIndicator" class="loading"><div class="spinner"></div></div>
                     <div id="tableContent"></div>
                 </div>
+                <div class="more-wrap hidden" id="moreWrap">
+                    <button class="btn btn-primary btn-sm" onclick="loadMoreTransactions()">
+                        <i class="fas fa-chevron-down"></i> Load More Transactions
+                    </button>
+                </div>
             </div>
         </div>
 
     </main>
 
-    <!-- ===== FLOATING ACTION BUTTONS (mirror Android app) ===== -->
-    <div class="fab-container" id="fabContainer" style="display:none;">
-        <!-- Ledger FABs (Add Transaction + Quick Add) -->
+    <!-- ===== FLOATING ACTION BUTTONS ===== -->
+    <div class="fab-container" id="fabContainer">
         <button class="fab primary" id="fabAddTransaction" onclick="fabAddTransaction()" title="Add Transaction">
             <i class="fas fa-plus"></i>
             <span class="fab-label">Add Transaction</span>
@@ -402,14 +501,13 @@
             <i class="fas fa-bolt"></i>
             <span class="fab-label">Quick Add</span>
         </button>
-        <!-- Accounts FAB (Add Account) -->
-        <button class="fab account" id="fabAddAccount" onclick="fabAddAccount()" title="Add Account" style="display:none;">
-            <i class="fas fa-plus"></i>
-            <span class="fab-label">Add Account</span>
+        <button class="fab category" id="fabAddCategory" onclick="fabAddCategory()" title="Add Category">
+            <i class="fas fa-tag"></i>
+            <span class="fab-label">Add Category</span>
         </button>
     </div>
 
-    <!-- ===== MODAL ===== -->
+    <!-- ===== MAIN MODAL (Add/Edit) ===== -->
     <div class="modal-overlay" id="modalOverlay">
         <div class="modal">
             <div class="modal-header">
@@ -424,6 +522,60 @@
         </div>
     </div>
 
+    <!-- ===== SETTINGS MODAL ===== -->
+    <div class="modal-overlay" id="settingsModalOverlay">
+        <div class="modal modal-sm">
+            <div class="modal-header">
+                <h2><i class="fas fa-cog"></i> Transaction Settings</h2>
+                <button class="modal-close" onclick="closeSettingsModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label><i class="fas fa-star"></i> Default Cashflow Account</label>
+                    <select id="settingsDefaultAccount"></select>
+                    <p style="font-size:11px;color:#888;margin-top:6px;">
+                        Used as the pre-selected account in <strong>Quick Add</strong>. Only Temporary accounts are listed.
+                    </p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closeSettingsModal()" style="color:#333;border-color:#ccc;">Close</button>
+                <button class="btn btn-primary" onclick="saveTransactionSettings()"><i class="fas fa-save"></i> Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== PASSWORD VERIFICATION MODAL ===== -->
+    <div class="modal-overlay" id="passwordModalOverlay">
+        <div class="modal modal-sm">
+            <div class="modal-header">
+                <h2 id="passwordModalTitle"><i class="fas fa-lock"></i> Verify Password</h2>
+                <button class="modal-close" onclick="closePasswordModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <p id="passwordModalMessage" style="font-size:13px;color:#666;margin-bottom:14px;">
+                    Please enter your password to confirm this action.
+                </p>
+                <div class="form-group">
+                    <label>Password</label>
+                    <div class="password-wrapper">
+                        <input type="password" id="confirmPasswordInput" placeholder="Enter your password">
+                        <button class="password-toggle" onclick="toggleConfirmPassword()">
+                            <i class="fas fa-eye" id="confirmPasswordEye"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="passwordModalError" style="color:#d32f2f;font-size:12px;min-height:16px;"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="closePasswordModal()" style="color:#333;border-color:#ccc;">Cancel</button>
+                <button class="btn btn-danger" id="passwordConfirmBtn" onclick="submitPasswordConfirmation()">
+                    <i class="fas fa-check"></i> Confirm
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- ===== TOAST ===== -->
     <div class="toast-container" id="toastContainer"></div>
 
@@ -432,7 +584,7 @@
     <!-- ============================================================ -->
     <script>
         // ============================================================
-        // FIREBASE CONFIGURATION (Web App config for project budget-cf0cf)
+        // FIREBASE CONFIG
         // ============================================================
         var firebaseConfig = {
             apiKey: "AIzaSyDAnxBnGpIlknvLvunq3aD_yXfHUHG9lm4",
@@ -449,16 +601,8 @@
         var auth = firebase.auth();
 
         // ============================================================
-        // GLOBAL STATE
+        // CONSTANTS
         // ============================================================
-        var currentUserId = null;
-        var currentUserEmail = null;
-        var currentCollection = 'accounts';
-        var currentData = [];
-        var selectedDocId = null;
-        var isEditing = false;
-        var quickAddMode = false;
-
         var COLLECTION_NAMES = {
             accounts: { label: 'Accounts', idField: 'accountId' },
             transactions: { label: 'Transactions', idField: 'transactionId' },
@@ -484,17 +628,72 @@
             ]
         };
 
+        var LS_KEY_DEFAULT_ACCOUNT = 'default_cashflow_account';
+        var TX_PAGE_SIZE = 50;
+
+        // ============================================================
+        // GLOBAL STATE
+        // ============================================================
+        var currentUserId = null;
+        var currentUserEmail = null;
+        var currentCollection = 'accounts';
+        var currentData = [];
+        var selectedDocId = null;
+        var isEditing = false;
+        var quickAddMode = false;
+
+        var cachedAccounts = [];
+        var cachedCategories = [];
+
+        // Transactions view state
+        var txFilterMode = 'all';                     // 'all' | 'monthly'
+        var txAllVisibleCount = TX_PAGE_SIZE;         // for "All" view
+        var txSelectedMonthKey = currentMonthKey();   // "YYYY-MM"
+        var passwordModalCallback = null;             // function to run on password success
+
+        // ============================================================
+        // DOM REFS
+        // ============================================================
+        var loginSection = document.getElementById('loginSection');
+        var appContent = document.getElementById('appContent');
+        var userDisplay = document.getElementById('userDisplay');
+        var authBtn = document.getElementById('authBtn');
+
+        // ============================================================
+        // UTIL
+        // ============================================================
         function emailToDocumentId(email) {
             if (!email) return "";
             return email.toLowerCase().replace(/@/g, '_').replace(/\./g, '_');
         }
 
-        var loginSection = document.getElementById('loginSection');
-        var appContent = document.getElementById('appContent');
-        var userDisplay = document.getElementById('userDisplay');
-        var authBtn = document.getElementById('authBtn');
-        var currentUserEmailEl = document.getElementById('currentUserEmail');
-        var currentUserIdEl = document.getElementById('currentUserId');
+        function currentMonthKey() {
+            var d = new Date();
+            return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+        }
+
+        // Convert "DD/MM/YY" → "YYYY-MM" for month comparison
+        function txMonthKeyFromDate(dateStr) {
+            if (!dateStr) return '';
+            var parts = dateStr.split('/');
+            if (parts.length !== 3) return '';
+            var dd = parts[0], mm = parts[1], yy = parts[2];
+            var fullYear = parseInt(yy, 10);
+            if (fullYear < 100) fullYear += 2000;
+            return fullYear + '-' + String(mm).padStart(2, '0');
+        }
+
+        // Convert "DD/MM/YY" → comparable number yyyymmdd for sorting
+        function txDateSortKey(dateStr) {
+            if (!dateStr) return 0;
+            var parts = dateStr.split('/');
+            if (parts.length !== 3) return 0;
+            var dd = parseInt(parts[0], 10) || 0;
+            var mm = parseInt(parts[1], 10) || 0;
+            var yy = parseInt(parts[2], 10) || 0;
+            if (yy < 100) yy += 2000;
+            return yy * 10000 + mm * 100 + dd;
+        }
 
         function togglePasswordVisibility() {
             var input = document.getElementById('loginPassword');
@@ -503,8 +702,15 @@
             else { input.type = 'password'; icon.className = 'fas fa-eye'; }
         }
 
+        function toggleConfirmPassword() {
+            var input = document.getElementById('confirmPasswordInput');
+            var icon = document.getElementById('confirmPasswordEye');
+            if (input.type === 'password') { input.type = 'text'; icon.className = 'fas fa-eye-slash'; }
+            else { input.type = 'password'; icon.className = 'fas fa-eye'; }
+        }
+
         // ============================================================
-        // AUTHENTICATION
+        // AUTH
         // ============================================================
         function handleSignIn() {
             var email = document.getElementById('loginEmail').value.trim();
@@ -526,7 +732,7 @@
                     currentUserId = emailToDocumentId(user.email);
                     updateAuthUI();
                     showToast('Welcome ' + user.email + '!', 'success');
-                    loadCollection();
+                    preloadCache().then(function() { loadCollection(); });
                     signInBtn.innerHTML = originalText;
                     signInBtn.disabled = false;
                 })
@@ -540,7 +746,7 @@
                                 currentUserId = emailToDocumentId(user.email);
                                 updateAuthUI();
                                 showToast('Account created for ' + user.email + '!', 'success');
-                                loadCollection();
+                                preloadCache().then(function() { loadCollection(); });
                                 signInBtn.innerHTML = originalText;
                                 signInBtn.disabled = false;
                             })
@@ -559,44 +765,21 @@
                 });
         }
 
-        function handleAnonymousSignIn() {
-            var errorEl = document.getElementById('loginError');
-            errorEl.textContent = '';
-            auth.signInAnonymously()
-                .then(function(userCredential) {
-                    var user = userCredential.user;
-                    currentUserEmail = 'Guest_' + user.uid.substring(0, 8);
-                    currentUserId = 'guest_' + user.uid.substring(0, 8);
-                    updateAuthUI();
-                    showToast('Signed in as guest', 'info');
-                    loadCollection();
-                })
-                .catch(function(error) {
-                    console.error('Anonymous auth error:', error);
-                    if (error.code === 'auth/admin-restricted-operation') {
-                        errorEl.textContent = 'Anonymous sign-in is not enabled.';
-                        showToast('Anonymous sign-in not enabled', 'error');
-                    } else {
-                        errorEl.textContent = 'Guest sign in failed: ' + error.message;
-                        showToast('Guest sign in failed: ' + error.message, 'error');
-                    }
-                });
-        }
-
         function toggleAuth() {
             if (auth.currentUser) {
                 auth.signOut().then(function() {
                     currentUserId = null; currentUserEmail = null;
+                    cachedAccounts = []; cachedCategories = [];
                     updateAuthUI();
                     showToast('Signed out', 'info');
                     loginSection.style.display = 'block';
                     appContent.style.display = 'none';
-                    document.getElementById('fabContainer').style.display = 'none';
+                    document.getElementById('fabContainer').classList.remove('active');
                 });
             } else {
                 loginSection.style.display = 'block';
                 appContent.style.display = 'none';
-                document.getElementById('fabContainer').style.display = 'none';
+                document.getElementById('fabContainer').classList.remove('active');
             }
         }
 
@@ -609,32 +792,24 @@
                 authBtn.className = 'btn btn-danger btn-sm';
                 loginSection.style.display = 'none';
                 appContent.style.display = 'block';
-                document.getElementById('fabContainer').style.display = 'flex';
-                updateFabVisibility();
-                if (currentUserEmailEl) currentUserEmailEl.textContent = currentUserEmail || 'N/A';
-                if (currentUserIdEl) currentUserIdEl.textContent = currentUserId || 'N/A';
             } else {
                 userDisplay.textContent = 'Not Signed In';
                 authBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Sign In';
                 authBtn.className = 'btn btn-primary btn-sm';
                 loginSection.style.display = 'block';
                 appContent.style.display = 'none';
-                document.getElementById('fabContainer').style.display = 'none';
                 currentUserId = null; currentUserEmail = null;
             }
         }
 
         auth.onAuthStateChanged(function(user) {
             if (user) {
-                if (user.isAnonymous) {
-                    currentUserEmail = 'Guest_' + user.uid.substring(0, 8);
-                    currentUserId = 'guest_' + user.uid.substring(0, 8);
-                } else {
+                if (user.email) {
                     currentUserEmail = user.email;
                     currentUserId = emailToDocumentId(user.email);
                 }
                 updateAuthUI();
-                loadCollection();
+                preloadCache().then(function() { loadCollection(); });
             } else {
                 updateAuthUI();
                 document.getElementById('tableContent').innerHTML =
@@ -644,23 +819,147 @@
         });
 
         // ============================================================
-        // DATA LOADING
+        // CACHE PRELOAD
+        // ============================================================
+        function preloadCache() {
+            if (!currentUserId) return Promise.resolve();
+            var userRef = db.collection('users').doc(currentUserId);
+            return Promise.all([
+                userRef.collection('accounts').get(),
+                userRef.collection('categories').get()
+            ]).then(function(results) {
+                cachedAccounts = [];
+                results[0].forEach(function(doc) { var d = doc.data(); d._id = doc.id; cachedAccounts.push(d); });
+                cachedCategories = [];
+                results[1].forEach(function(doc) { var d = doc.data(); d._id = doc.id; cachedCategories.push(d); });
+                ensureDefaultAccount();
+            }).catch(function(err) {
+                console.warn('Cache preload failed:', err);
+            });
+        }
+
+        // ============================================================
+        // DEFAULT CASHFLOW ACCOUNT
+        // ============================================================
+        function getStoredDefaultAccountId() {
+            try { return localStorage.getItem(LS_KEY_DEFAULT_ACCOUNT); } catch(e) { return null; }
+        }
+        function setStoredDefaultAccountId(id) {
+            try { localStorage.setItem(LS_KEY_DEFAULT_ACCOUNT, id || ''); } catch(e) {}
+        }
+        function getTemporaryAccounts() {
+            return cachedAccounts.filter(function(a) { return a.accountType === 'Temporary'; });
+        }
+        function ensureDefaultAccount() {
+            var stored = getStoredDefaultAccountId();
+            var temps = getTemporaryAccounts();
+            if (temps.length === 0) { setStoredDefaultAccountId(''); return null; }
+            var found = temps.find(function(a) { return a.accountId === stored; });
+            if (!found) {
+                setStoredDefaultAccountId(temps[0].accountId);
+                return temps[0].accountId;
+            }
+            return stored;
+        }
+
+        function openTransactionSettings() {
+            var sel = document.getElementById('settingsDefaultAccount');
+            var temps = getTemporaryAccounts();
+            var selected = ensureDefaultAccount();
+            var html = '';
+            if (temps.length === 0) {
+                html = '<option value="">No Temporary accounts available</option>';
+            } else {
+                temps.forEach(function(a) {
+                    html += '<option value="' + a.accountId + '"' +
+                        (a.accountId === selected ? ' selected' : '') + '>' +
+                        (a.accountName || a.accountId) + '</option>';
+                });
+            }
+            sel.innerHTML = html;
+            document.getElementById('settingsModalOverlay').classList.add('active');
+        }
+
+        function saveTransactionSettings() {
+            var val = document.getElementById('settingsDefaultAccount').value;
+            if (val) {
+                setStoredDefaultAccountId(val);
+                showToast('Default account updated', 'success');
+            }
+            closeSettingsModal();
+        }
+
+        function closeSettingsModal() {
+            document.getElementById('settingsModalOverlay').classList.remove('active');
+        }
+
+        // ============================================================
+        // PASSWORD VERIFICATION
+        // ============================================================
+        function requestPassword(title, message, callback) {
+            document.getElementById('passwordModalTitle').innerHTML = '<i class="fas fa-lock"></i> ' + title;
+            document.getElementById('passwordModalMessage').textContent = message;
+            document.getElementById('confirmPasswordInput').value = '';
+            document.getElementById('passwordModalError').textContent = '';
+            passwordModalCallback = callback;
+            document.getElementById('passwordModalOverlay').classList.add('active');
+            setTimeout(function() {
+                var el = document.getElementById('confirmPasswordInput');
+                if (el) el.focus();
+            }, 100);
+        }
+
+        function closePasswordModal() {
+            document.getElementById('passwordModalOverlay').classList.remove('active');
+            passwordModalCallback = null;
+        }
+
+        function submitPasswordConfirmation() {
+            var pw = document.getElementById('confirmPasswordInput').value;
+            var errEl = document.getElementById('passwordModalError');
+            errEl.textContent = '';
+
+            if (!pw) { errEl.textContent = 'Please enter your password'; return; }
+            if (!currentUserEmail) { errEl.textContent = 'No signed-in email found'; return; }
+
+            var btn = document.getElementById('passwordConfirmBtn');
+            var originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
+            btn.disabled = true;
+
+            auth.signInWithEmailAndPassword(currentUserEmail, pw)
+                .then(function() {
+                    var cb = passwordModalCallback;
+                    closePasswordModal();
+                    if (typeof cb === 'function') cb();
+                })
+                .catch(function(error) {
+                    console.error('Password verification failed:', error);
+                    errEl.textContent = 'Incorrect password. Please try again.';
+                })
+                .finally(function() {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                });
+        }
+
+        // ============================================================
+        // LOAD COLLECTION
         // ============================================================
         function loadCollection() {
             if (!currentUserId) { showToast('Please sign in first', 'warning'); return; }
 
-            var select = document.getElementById('collectionSelect');
-            currentCollection = select.value;
-
+            currentCollection = document.getElementById('collectionSelect').value;
             var info = COLLECTION_NAMES[currentCollection];
             document.getElementById('collectionTitle').textContent = info.label;
 
-            // Update toolbar button label & FAB visibility based on current collection
             updateToolbarButton();
             updateFabVisibility();
+            updateSubheaderVisibility();
 
             document.getElementById('loadingIndicator').style.display = 'flex';
             document.getElementById('tableContent').innerHTML = '';
+            document.getElementById('moreWrap').classList.add('hidden');
 
             var userRef = db.collection('users').doc(currentUserId);
             userRef.collection(currentCollection).get()
@@ -673,8 +972,15 @@
                         currentData.push(data);
                     });
                     document.getElementById('rowCount').textContent = currentData.length + ' documents';
-                    renderTable(currentData);
+
+                    if (currentCollection === 'transactions') {
+                        txAllVisibleCount = TX_PAGE_SIZE;
+                        renderTransactions();
+                    } else {
+                        renderTable(currentData);
+                    }
                     updateStats();
+                    preloadCache();
                 })
                 .catch(function(error) {
                     document.getElementById('loadingIndicator').style.display = 'none';
@@ -685,55 +991,325 @@
         }
 
         // ============================================================
-        // TOOLBAR + FAB VISIBILITY
+        // TOOLBAR + FAB + SUBHEADER VISIBILITY
         // ============================================================
         function updateToolbarButton() {
-            var label = document.getElementById('toolbarAddLabel');
             var btn = document.getElementById('toolbarAddBtn');
             if (currentCollection === 'accounts') {
-                label.textContent = 'Add Account';
                 btn.innerHTML = '<i class="fas fa-plus"></i> <span id="toolbarAddLabel">Add Account</span>';
             } else if (currentCollection === 'transactions') {
-                label.textContent = 'Add Transaction';
                 btn.innerHTML = '<i class="fas fa-plus"></i> <span id="toolbarAddLabel">Add Transaction</span>';
             } else if (currentCollection === 'categories') {
-                label.textContent = 'Add Category';
                 btn.innerHTML = '<i class="fas fa-plus"></i> <span id="toolbarAddLabel">Add Category</span>';
             }
         }
 
         function updateFabVisibility() {
             var container = document.getElementById('fabContainer');
-            if (!auth.currentUser) { container.style.display = 'none'; return; }
-            container.style.display = 'flex';
+            if (!auth.currentUser) { container.classList.remove('active'); return; }
 
             var fabTx = document.getElementById('fabAddTransaction');
             var fabQuick = document.getElementById('fabQuickAdd');
-            var fabAcct = document.getElementById('fabAddAccount');
+            var fabCat = document.getElementById('fabAddCategory');
 
-            if (currentCollection === 'accounts') {
-                // Accounts view: only Add Account FAB
-                fabTx.style.display = 'none';
-                fabQuick.style.display = 'none';
-                fabAcct.style.display = 'flex';
-            } else if (currentCollection === 'transactions') {
-                // Ledger view: Add Transaction + Quick Add
+            fabTx.style.display = 'none';
+            fabQuick.style.display = 'none';
+            fabCat.style.display = 'none';
+
+            if (currentCollection === 'transactions') {
                 fabTx.style.display = 'flex';
                 fabQuick.style.display = 'flex';
-                fabAcct.style.display = 'none';
+                container.classList.add('active');
+            } else if (currentCollection === 'categories') {
+                fabCat.style.display = 'flex';
+                container.classList.add('active');
             } else {
-                // Categories view: hide all (or keep hidden)
-                fabTx.style.display = 'none';
-                fabQuick.style.display = 'none';
-                fabAcct.style.display = 'none';
+                container.classList.remove('active');
+            }
+        }
+
+        function updateSubheaderVisibility() {
+            var sub = document.getElementById('txSubheader');
+            var settingsBtn = document.getElementById('txSettingsBtn');
+
+            if (currentCollection === 'transactions') {
+                sub.classList.add('active');
+                settingsBtn.classList.add('active');
+                renderMonthDropdown();
+                applyTransactionFilterState();
+            } else {
+                sub.classList.remove('active');
+                settingsBtn.classList.remove('active');
             }
         }
 
         // ============================================================
-        // RENDER TABLE
+        // TRANSACTIONS VIEW — TOGGLES + MONTH DROPDOWN
+        // ============================================================
+        function renderMonthDropdown() {
+            var sel = document.getElementById('monthSelect');
+            var year = new Date().getFullYear();
+            var monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+            var currentKey = currentMonthKey();
+            var html = '';
+            for (var i = 0; i < 12; i++) {
+                var key = year + '-' + String(i + 1).padStart(2, '0');
+                var selected = (key === txSelectedMonthKey) ? ' selected' : '';
+                html += '<option value="' + key + '"' + selected + '>' + monthNames[i] + ' ' + year + '</option>';
+            }
+            html += '<option value="__custom__">Custom…</option>';
+            sel.innerHTML = html;
+
+            // If the selected key isn't in this year, mark Custom
+            if (txSelectedMonthKey && txSelectedMonthKey.indexOf(year + '-') !== 0) {
+                sel.value = '__custom__';
+                document.getElementById('customMonthInput').classList.remove('hidden');
+                document.getElementById('customMonthInput').value = txSelectedMonthKey;
+            }
+        }
+
+        function applyTransactionFilterState() {
+            var toggleAll = document.getElementById('toggleAll');
+            var toggleMonthly = document.getElementById('toggleMonthly');
+            var monthWrap = document.getElementById('monthPickerWrap');
+
+            if (txFilterMode === 'all') {
+                toggleAll.classList.add('active');
+                toggleMonthly.classList.remove('active');
+                monthWrap.classList.add('hidden');
+            } else {
+                toggleAll.classList.remove('active');
+                toggleMonthly.classList.add('active');
+                monthWrap.classList.remove('hidden');
+            }
+        }
+
+        function switchTransactionFilter(mode) {
+            txFilterMode = mode;
+            txAllVisibleCount = TX_PAGE_SIZE;
+            applyTransactionFilterState();
+            renderTransactions();
+        }
+
+        function onMonthChange() {
+            var sel = document.getElementById('monthSelect');
+            var val = sel.value;
+            var customInput = document.getElementById('customMonthInput');
+            if (val === '__custom__') {
+                customInput.classList.remove('hidden');
+                if (!customInput.value) customInput.value = currentMonthKey();
+                txSelectedMonthKey = customInput.value;
+            } else {
+                customInput.classList.add('hidden');
+                txSelectedMonthKey = val;
+            }
+            renderTransactions();
+        }
+
+        function onCustomMonthChange() {
+            var val = document.getElementById('customMonthInput').value;
+            if (val) { txSelectedMonthKey = val; renderTransactions(); }
+        }
+
+        // ============================================================
+        // TRANSACTIONS RENDER
+        // ============================================================
+        function renderTransactions() {
+            var container = document.getElementById('tableContent');
+            var moreWrap = document.getElementById('moreWrap');
+
+            // Build sorted list (newest first)
+            var sorted = currentData.slice().sort(function(a, b) {
+                return txDateSortKey(b.date) - txDateSortKey(a.date);
+            });
+
+            if (sorted.length === 0) {
+                container.innerHTML =
+                    '<div class="empty-state"><i class="fas fa-database"></i><h3>No Transactions</h3><p>Click the blue FAB to add your first transaction.</p></div>';
+                moreWrap.classList.add('hidden');
+                return;
+            }
+
+            if (txFilterMode === 'all') {
+                renderAllTransactions(sorted);
+            } else {
+                renderMonthlyTransactions(sorted);
+            }
+        }
+
+        // ----- ALL Transactions (paginated via + More) -----
+        function renderAllTransactions(sortedList) {
+            var container = document.getElementById('tableContent');
+            var moreWrap = document.getElementById('moreWrap');
+
+            var visible = sortedList.slice(0, txAllVisibleCount);
+            var hasMore = sortedList.length > txAllVisibleCount;
+
+            var html = buildTransactionTable(visible, false, null);
+            container.innerHTML = html;
+
+            if (hasMore) {
+                moreWrap.classList.remove('hidden');
+            } else {
+                moreWrap.classList.add('hidden');
+            }
+        }
+
+        function loadMoreTransactions() {
+            txAllVisibleCount = currentData.length; // expand to all
+            var sorted = currentData.slice().sort(function(a, b) {
+                return txDateSortKey(b.date) - txDateSortKey(a.date);
+            });
+            renderAllTransactions(sorted);
+            showToast('All transactions loaded', 'success');
+        }
+
+        // ----- MONTHLY Transactions (grouped Inflow / Outflow) -----
+        function renderMonthlyTransactions(sortedList) {
+            var container = document.getElementById('tableContent');
+            var moreWrap = document.getElementById('moreWrap');
+            moreWrap.classList.add('hidden');
+
+            // Filter by selected month
+            var filtered = sortedList.filter(function(t) {
+                return txMonthKeyFromDate(t.date) === txSelectedMonthKey;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML =
+                    '<div class="empty-state"><i class="fas fa-calendar-times"></i><h3>No Transactions This Month</h3><p>Nothing was recorded in the selected month.</p></div>';
+                return;
+            }
+
+            // Split into inflow and outflow groups
+            var inflow = [];
+            var outflow = [];
+
+            filtered.forEach(function(t) {
+                var acc = cachedAccounts.find(function(a) { return a.accountId === t.accountId; });
+                if (!acc) { outflow.push(t); return; }
+
+                var isInflow = false;
+                if (acc.accountType === 'Income') {
+                    isInflow = true;
+                } else if (acc.accountType === 'Cashflow') {
+                    isInflow = (t.transactionType === 'Debit');
+                } else if (acc.accountType === 'Temporary') {
+                    isInflow = (t.transactionType === 'Credit');
+                } else {
+                    isInflow = false;
+                }
+
+                if (isInflow) inflow.push(t); else outflow.push(t);
+            });
+
+            var html = '<table><thead><tr>'
+                + '<th>Document ID</th>'
+                + '<th>Date</th>'
+                + '<th>Account</th>'
+                + '<th>Category</th>'
+                + '<th>Type</th>'
+                + '<th>Amount</th>'
+                + '<th>Notes</th>'
+                + '<th style="text-align:center;">Actions</th>'
+                + '</tr></thead><tbody>';
+
+            function accountName(id) {
+                var a = cachedAccounts.find(function(x) { return x.accountId === id; });
+                return a ? (a.accountName || a.accountId) : id;
+            }
+
+            function rowHtml(t, amountClass) {
+                var accName = accountName(t.accountId);
+                var cat = t.category || '—';
+                var notes = t.notes || '—';
+                var txType = t.transactionType || '';
+                var amount = (t.amount || 0).toLocaleString('en-IN');
+                var docId = t._id || t.transactionId || 'N/A';
+
+                return '<tr>'
+                    + '<td><span class="doc-id">' + docId + '</span></td>'
+                    + '<td>' + (t.date || '—') + '</td>'
+                    + '<td>' + accName + '</td>'
+                    + '<td>' + cat + '</td>'
+                    + '<td><span class="type-badge ' + String(txType).toLowerCase() + '">' + txType + '</span></td>'
+                    + '<td class="amount-cell ' + amountClass + '">₹' + amount + '</td>'
+                    + '<td>' + notes + '</td>'
+                    + '<td style="text-align:center;"><div class="table-actions">'
+                    +   '<button class="btn-icon edit" onclick="editDocument(\'' + docId + '\')"><i class="fas fa-edit"></i></button>'
+                    +   '<button class="btn-icon delete" onclick="confirmDelete(\'' + docId + '\')"><i class="fas fa-trash"></i></button>'
+                    + '</div></td>'
+                    + '</tr>';
+            }
+
+            // Inflow section
+            if (inflow.length > 0) {
+                html += '<tr class="group-header-row inflow"><td colspan="8">💰 Inflow (Money Received) — ' + inflow.length + ' transaction' + (inflow.length !== 1 ? 's' : '') + '</td></tr>';
+                inflow.forEach(function(t) { html += rowHtml(t, 'inflow'); });
+            }
+
+            // Outflow section
+            if (outflow.length > 0) {
+                html += '<tr class="group-header-row outflow"><td colspan="8">💳 Outflow (Money Paid) — ' + outflow.length + ' transaction' + (outflow.length !== 1 ? 's' : '') + '</td></tr>';
+                outflow.forEach(function(t) { html += rowHtml(t, 'outflow'); });
+            }
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        // ----- Generic transaction table builder (for All view) -----
+        function buildTransactionTable(list, grouped, filterFn) {
+            var html = '<table><thead><tr>'
+                + '<th>Document ID</th>'
+                + '<th>Date</th>'
+                + '<th>Account</th>'
+                + '<th>Category</th>'
+                + '<th>Type</th>'
+                + '<th>Amount</th>'
+                + '<th>Notes</th>'
+                + '<th style="text-align:center;">Actions</th>'
+                + '</tr></thead><tbody>';
+
+            function accountName(id) {
+                var a = cachedAccounts.find(function(x) { return x.accountId === id; });
+                return a ? (a.accountName || a.accountId) : id;
+            }
+
+            list.forEach(function(t) {
+                var docId = t._id || t.transactionId || 'N/A';
+                var accName = accountName(t.accountId);
+                var cat = t.category || '—';
+                var notes = t.notes || '—';
+                var txType = t.transactionType || '';
+                var amount = (t.amount || 0).toLocaleString('en-IN');
+
+                html += '<tr>'
+                    + '<td><span class="doc-id">' + docId + '</span></td>'
+                    + '<td>' + (t.date || '—') + '</td>'
+                    + '<td>' + accName + '</td>'
+                    + '<td>' + cat + '</td>'
+                    + '<td><span class="type-badge ' + String(txType).toLowerCase() + '">' + txType + '</span></td>'
+                    + '<td>₹' + amount + '</td>'
+                    + '<td>' + notes + '</td>'
+                    + '<td style="text-align:center;"><div class="table-actions">'
+                    +   '<button class="btn-icon edit" onclick="editDocument(\'' + docId + '\')"><i class="fas fa-edit"></i></button>'
+                    +   '<button class="btn-icon delete" onclick="confirmDelete(\'' + docId + '\')"><i class="fas fa-trash"></i></button>'
+                    + '</div></td>'
+                    + '</tr>';
+            });
+
+            html += '</tbody></table>';
+            return html;
+        }
+
+        // ============================================================
+        // RENDER TABLE (non-transactions)
         // ============================================================
         function renderTable(data) {
             var container = document.getElementById('tableContent');
+            document.getElementById('moreWrap').classList.add('hidden');
+
             if (data.length === 0) {
                 container.innerHTML =
                     '<div class="empty-state"><i class="fas fa-database"></i><h3>No Documents Found</h3><p>Click the green button to create your first document.</p></div>';
@@ -781,20 +1357,30 @@
 
         function filterTable() {
             var search = document.getElementById('searchInput').value.toLowerCase();
-            if (!search) { renderTable(currentData); return; }
+            if (!search) {
+                if (currentCollection === 'transactions') renderTransactions();
+                else renderTable(currentData);
+                return;
+            }
             var filtered = currentData.filter(function(item) {
                 return Object.values(item).some(function(val) {
                     if (val === null || val === undefined) return false;
                     return String(val).toLowerCase().includes(search);
                 });
             });
-            renderTable(filtered);
+            if (currentCollection === 'transactions') {
+                var sorted = filtered.slice().sort(function(a, b) {
+                    return txDateSortKey(b.date) - txDateSortKey(a.date);
+                });
+                if (txFilterMode === 'all') renderAllTransactions(sorted);
+                else renderMonthlyTransactions(sorted);
+            } else {
+                renderTable(filtered);
+            }
         }
 
         // ============================================================
-        // STATS — Net Worth breakdown (matches app Dashboard)
-        // Net Worth = (Investment + Asset + Cashflow) - Liability
-        // Temporary tracked separately, NOT in net worth.
+        // STATS
         // ============================================================
         function updateStats() {
             if (!currentUserId) return;
@@ -812,7 +1398,6 @@
                         case 'Liability': liability += bal; break;
                         case 'Cashflow': cashflowBalance += bal; break;
                         case 'Temporary': temporaryBalance += bal; break;
-                        // Income contributes nothing to net worth, same as app
                     }
                 });
 
@@ -835,7 +1420,7 @@
         }
 
         // ============================================================
-        // MODAL
+        // MODAL — add/edit
         // ============================================================
         function showAddModal() {
             if (!currentUserId) { showToast('Please sign in first', 'warning'); return; }
@@ -843,7 +1428,7 @@
             selectedDocId = null;
             quickAddMode = false;
             document.getElementById('modalTitle').textContent = 'Add New ' + COLLECTION_NAMES[currentCollection].label;
-            generateForm(null);
+            generateForm(null, null);
             document.getElementById('modalOverlay').classList.add('active');
         }
 
@@ -855,15 +1440,43 @@
             document.getElementById('modalTitle').textContent = 'Edit ' + COLLECTION_NAMES[currentCollection].label;
             var item = currentData.find(function(d) { return d._id === docId; });
             if (item) {
-                generateForm(item);
+                generateForm(item, null);
                 document.getElementById('modalOverlay').classList.add('active');
             } else { showToast('Document not found', 'error'); }
         }
 
-        function generateForm(data) {
+        function showAddCategoryModal() {
+            if (!currentUserId) { showToast('Please sign in first', 'warning'); return; }
+            isEditing = false;
+            selectedDocId = null;
+            quickAddMode = false;
+            document.getElementById('modalTitle').textContent = 'Add New Category';
+            var html = ''
+                + '<div class="form-group">'
+                +   '<label>Category Name</label>'
+                +   '<input type="text" id="catNameInput" placeholder="e.g., Grocery, Rent, Fuel">'
+                + '</div>'
+                + '<div class="form-group" style="font-size:12px;color:#888;">'
+                +   'Category ID will be auto-generated from the name (lowercase, spaces → underscores).'
+                + '</div>';
+            document.getElementById('modalBody').dataset.fields = JSON.stringify(['__category_special__']);
+            document.getElementById('modalBody').innerHTML = html;
+            document.getElementById('modalOverlay').classList.add('active');
+            setTimeout(function() {
+                var el = document.getElementById('catNameInput');
+                if (el) el.focus();
+            }, 100);
+        }
+
+        // ============================================================
+        // GENERATE FORM
+        // ============================================================
+        function generateForm(data, overrideFields) {
             var container = document.getElementById('modalBody');
             var fields;
-            if (data) {
+            if (overrideFields) {
+                fields = overrideFields;
+            } else if (data) {
                 fields = Object.keys(data).filter(function(key) {
                     return !['_id', 'createdAt', 'updatedAt'].includes(key);
                 });
@@ -877,18 +1490,42 @@
                 var inputType = 'text';
                 var options = '';
 
-                if (key === 'accountType') {
+                if (currentCollection === 'transactions' && key === 'accountId') {
+                    inputType = 'select';
+                    options = '<option value="">Select Account</option>';
+                    var list = quickAddMode ? getTemporaryAccounts() : cachedAccounts;
+                    if (list.length === 0) {
+                        options = '<option value="">No accounts available</option>';
+                    } else {
+                        list.forEach(function(a) {
+                            options += '<option value="' + a.accountId + '"' +
+                                (value === a.accountId ? ' selected' : '') + '>' +
+                                (a.accountName || a.accountId) + ' (' + a.accountType + ')</option>';
+                        });
+                    }
+                }
+                else if (currentCollection === 'transactions' && key === 'category') {
+                    inputType = 'select';
+                    options = '<option value="">(Select account first)</option>';
+                }
+                else if (key === 'accountType') {
                     inputType = 'select';
                     options = '<option value="">Select Type</option>';
-                    ACCOUNT_TYPES.forEach(function(t) { options += '<option value="' + t + '"' + (value === t ? ' selected' : '') + '>' + t + '</option>'; });
+                    ACCOUNT_TYPES.forEach(function(t) {
+                        options += '<option value="' + t + '"' + (value === t ? ' selected' : '') + '>' + t + '</option>';
+                    });
                 } else if (key === 'transactionType') {
                     inputType = 'select';
                     options = '<option value="">Select Type</option>';
-                    TRANSACTION_TYPES.forEach(function(t) { options += '<option value="' + t + '"' + (value === t ? ' selected' : '') + '>' + t + '</option>'; });
+                    TRANSACTION_TYPES.forEach(function(t) {
+                        options += '<option value="' + t + '"' + (value === t ? ' selected' : '') + '>' + t + '</option>';
+                    });
                 } else if (key === 'frequency') {
                     inputType = 'select';
                     options = '<option value="">Select Frequency</option>';
-                    FREQUENCIES.forEach(function(t) { options += '<option value="' + t + '"' + (value === t ? ' selected' : '') + '>' + t + '</option>'; });
+                    FREQUENCIES.forEach(function(t) {
+                        options += '<option value="' + t + '"' + (value === t ? ' selected' : '') + '>' + t + '</option>';
+                    });
                 } else if (key === 'notes') {
                     inputType = 'textarea';
                 } else if (
@@ -903,23 +1540,132 @@
                 var label = key.replace(/([A-Z])/g, ' $1').replace(/^./, function(str) { return str.toUpperCase(); });
                 html += '<div class="form-group"><label>' + label + '</label>';
                 if (inputType === 'select') {
-                    html += '<select id="field_' + key + '">' + options + '</select>';
+                    html += '<select id="field_' + key + '"' +
+                        (key === 'accountId' ? ' onchange="onTxAccountChange()"' : '') + '>' +
+                        options + '</select>';
                 } else if (inputType === 'textarea') {
                     html += '<textarea id="field_' + key + '">' + (value || '') + '</textarea>';
                 } else {
-                    html += '<input type="' + inputType + '" id="field_' + key + '" value="' + (value || '') + '" ' + (inputType === 'number' ? 'step="any"' : '') + '>';
+                    html += '<input type="' + inputType + '" id="field_' + key + '" value="' + (value || '') + '" ' +
+                        (inputType === 'number' ? 'step="any"' : '') + '>';
                 }
                 html += '</div>';
             });
 
             container.dataset.fields = JSON.stringify(fields);
             container.innerHTML = html;
+
+            if (currentCollection === 'transactions') {
+                var accEl = document.getElementById('field_accountId');
+                if (accEl && accEl.value) {
+                    onTxAccountChange(true);
+                }
+                var dateEl = document.getElementById('field_date');
+                if (dateEl && !dateEl.value) {
+                    var d = new Date();
+                    var mm = String(d.getMonth() + 1).padStart(2, '0');
+                    var dd = String(d.getDate()).padStart(2, '0');
+                    dateEl.value = d.getFullYear() + '-' + mm + '-' + dd;
+                }
+            }
         }
 
+        // ============================================================
+        // TRANSACTION ACCOUNT → CATEGORY
+        // ============================================================
+        function onTxAccountChange(skipReset) {
+            var accEl = document.getElementById('field_accountId');
+            if (!accEl) return;
+            var accId = accEl.value;
+            var acc = cachedAccounts.find(function(a) { return a.accountId === accId; });
+            var isCashflowLike = acc && (acc.accountType === 'Cashflow' || acc.accountType === 'Temporary');
+
+            var catEl = document.getElementById('field_category');
+            if (catEl) {
+                var wrapper = catEl.parentElement;
+                if (isCashflowLike) {
+                    wrapper.style.display = 'block';
+                    var html = '<option value="">Select Category</option>';
+                    cachedCategories
+                        .slice()
+                        .sort(function(a, b) { return (a.name || '').localeCompare(b.name || ''); })
+                        .forEach(function(c) {
+                            html += '<option value="' + (c.name || '') + '">' + (c.name || c.categoryId) + '</option>';
+                        });
+                    var current = catEl.value;
+                    catEl.innerHTML = html;
+                    if (current) catEl.value = current;
+                } else {
+                    wrapper.style.display = 'none';
+                    catEl.value = '';
+                }
+            }
+
+            if (!isEditing && !quickAddMode) {
+                var txTypeEl = document.getElementById('field_transactionType');
+                if (txTypeEl) {
+                    if (acc && acc.accountType === 'Income') {
+                        txTypeEl.value = 'Credit';
+                    } else if (isCashflowLike) {
+                        txTypeEl.value = 'Debit';
+                    } else {
+                        txTypeEl.value = 'Outflow';
+                    }
+                }
+            }
+        }
+
+        // ============================================================
+        // QUICK ADD
+        // ============================================================
+        function showQuickAddModal() {
+            if (!currentUserId) { showToast('Please sign in first', 'warning'); return; }
+            isEditing = false;
+            selectedDocId = null;
+            quickAddMode = true;
+            document.getElementById('modalTitle').textContent = '⚡ Quick Add Transaction';
+
+            var defaultId = ensureDefaultAccount();
+            var draft = {
+                accountId: defaultId || '',
+                transactionType: 'Debit',
+                date: '',
+                category: '',
+                amount: '',
+                notes: ''
+            };
+            var orderedFields = ['transactionId', 'date', 'accountId', 'category', 'transactionType', 'amount', 'notes'];
+            generateForm(draft, orderedFields);
+            document.getElementById('modalOverlay').classList.add('active');
+
+            var txTypeEl = document.getElementById('field_transactionType');
+            if (txTypeEl) txTypeEl.value = 'Debit';
+        }
+
+        // ============================================================
+        // SAVE
+        // ============================================================
         function saveDocument() {
             if (!currentUserId) { showToast('Please sign in first', 'warning'); return; }
+
             var container = document.getElementById('modalBody');
             var fields = JSON.parse(container.dataset.fields || '[]');
+
+            if (fields.length === 1 && fields[0] === '__category_special__') {
+                var name = (document.getElementById('catNameInput').value || '').trim();
+                if (!name) { showToast('Please enter a category name', 'warning'); return; }
+                var categoryId = name.toLowerCase().replace(/ /g, '_');
+                var userRef0 = db.collection('users').doc(currentUserId);
+                userRef0.collection('categories').doc(categoryId).set({ name: name })
+                    .then(function() {
+                        closeModal();
+                        showToast('Category added successfully!', 'success');
+                        preloadCache().then(function() { loadCollection(); });
+                    })
+                    .catch(function(error) { showToast('Error: ' + error.message, 'error'); });
+                return;
+            }
+
             var data = {};
             fields.forEach(function(key) {
                 var el = document.getElementById('field_' + key);
@@ -936,6 +1682,26 @@
             if (!docId) { docId = isEditing ? selectedDocId : null; }
             if (!docId) { showToast('Please provide a document ID (' + idField + ')', 'warning'); return; }
 
+            if (currentCollection === 'transactions') {
+                if (!data.accountId) { showToast('Please select an account', 'warning'); return; }
+                var acc = cachedAccounts.find(function(a) { return a.accountId === data.accountId; });
+                if (acc && (acc.accountType === 'Cashflow' || acc.accountType === 'Temporary')) {
+                    if (!data.category) { showToast('Category is required for Cashflow/Temporary accounts', 'warning'); return; }
+                } else {
+                    data.category = '';
+                    if (!data.transactionType || data.transactionType === 'Credit' || data.transactionType === 'Debit') {
+                        data.transactionType = 'Outflow';
+                    }
+                }
+                if (data.date && data.date.indexOf('-') !== -1) {
+                    var parts = data.date.split('-');
+                    if (parts.length === 3) {
+                        var yy = parts[0].slice(-2);
+                        data.date = parts[2] + '/' + parts[1] + '/' + yy;
+                    }
+                }
+            }
+
             var userRef = db.collection('users').doc(currentUserId);
             var docRef = userRef.collection(currentCollection).doc(docId);
 
@@ -943,44 +1709,52 @@
                 docRef.update(data).then(function() {
                     closeModal();
                     showToast('Document updated successfully!', 'success');
-                    loadCollection();
+                    preloadCache().then(function() { loadCollection(); });
                 }).catch(function(error) { showToast('Error updating: ' + error.message, 'error'); });
             } else {
                 docRef.set(data).then(function() {
                     closeModal();
                     showToast('Document created successfully!', 'success');
-                    loadCollection();
+                    preloadCache().then(function() { loadCollection(); });
                 }).catch(function(error) { showToast('Error creating: ' + error.message, 'error'); });
             }
         }
 
+        // ============================================================
+        // DELETE
+        // ============================================================
         function confirmDelete(docId) {
             if (!currentUserId) { showToast('Please sign in first', 'warning'); return; }
+
+            // Special-case: account deletion requires password
+            if (currentCollection === 'accounts') {
+                requestPassword(
+                    'Delete Account',
+                    'Deleting an account is permanent. Please enter your password to confirm.',
+                    function() { doDelete(docId); }
+                );
+                return;
+            }
+
+            // Transactions & categories: simple confirm
             if (confirm('Are you sure you want to delete this document?\n\nID: ' + docId)) {
-                var userRef = db.collection('users').doc(currentUserId);
-                userRef.collection(currentCollection).doc(docId).delete()
-                    .then(function() { showToast('Document deleted successfully', 'success'); loadCollection(); })
-                    .catch(function(error) { showToast('Error deleting: ' + error.message, 'error'); });
+                doDelete(docId);
             }
         }
 
-        function confirmDeleteAll() {
-            if (!currentUserId) { showToast('Please sign in first', 'warning'); return; }
-            if (confirm('⚠️ WARNING: This will delete ALL documents in the "' + currentCollection + '" collection.\n\nAre you absolutely sure?')) {
-                if (confirm('Final confirmation: Click OK to proceed')) {
-                    var userRef = db.collection('users').doc(currentUserId);
-                    userRef.collection(currentCollection).get()
-                        .then(function(snapshot) {
-                            var batch = db.batch();
-                            snapshot.forEach(function(doc) { batch.delete(doc.ref); });
-                            return batch.commit();
-                        })
-                        .then(function() { showToast('All documents deleted from ' + currentCollection, 'success'); loadCollection(); })
-                        .catch(function(error) { showToast('Error deleting: ' + error.message, 'error'); });
-                }
-            }
+        function doDelete(docId) {
+            var userRef = db.collection('users').doc(currentUserId);
+            userRef.collection(currentCollection).doc(docId).delete()
+                .then(function() {
+                    showToast('Document deleted successfully', 'success');
+                    preloadCache().then(function() { loadCollection(); });
+                })
+                .catch(function(error) { showToast('Error deleting: ' + error.message, 'error'); });
         }
 
+        // ============================================================
+        // CLOSE MODALS
+        // ============================================================
         function closeModal() {
             document.getElementById('modalOverlay').classList.remove('active');
             quickAddMode = false;
@@ -988,6 +1762,12 @@
 
         document.getElementById('modalOverlay').addEventListener('click', function(e) {
             if (e.target === this) closeModal();
+        });
+        document.getElementById('settingsModalOverlay').addEventListener('click', function(e) {
+            if (e.target === this) closeSettingsModal();
+        });
+        document.getElementById('passwordModalOverlay').addEventListener('click', function(e) {
+            if (e.target === this) closePasswordModal();
         });
 
         // ============================================================
@@ -1004,34 +1784,37 @@
             container.appendChild(toast);
             setTimeout(function() {
                 toast.style.opacity = '0';
-                toast.style.transform = 'translateX(-100%)';
+                toast.style.transform = 'translateX(100%)';
                 setTimeout(function() { toast.remove(); }, 400);
             }, 5000);
         }
 
         function refreshData() {
             showToast('Refreshing data...', 'info');
-            loadCollection();
+            preloadCache().then(function() { loadCollection(); });
         }
 
         // ============================================================
         // TOOLBAR / FAB ACTIONS
         // ============================================================
         function toolbarAddAction() {
-            // Toolbar Add acts on the current collection
-            showAddModal();
+            if (currentCollection === 'categories') {
+                showAddCategoryModal();
+            } else {
+                showAddModal();
+            }
         }
 
-        // FAB: Add Transaction — switches to transactions view, opens modal
         function fabAddTransaction() {
             if (currentCollection !== 'transactions') {
                 document.getElementById('collectionSelect').value = 'transactions';
                 currentCollection = 'transactions';
                 updateToolbarButton();
                 updateFabVisibility();
-                // Load the transactions collection then show the add modal
-                var userRef = db.collection('users').doc(currentUserId);
+                updateSubheaderVisibility();
                 document.getElementById('collectionTitle').textContent = 'Transactions';
+
+                var userRef = db.collection('users').doc(currentUserId);
                 document.getElementById('loadingIndicator').style.display = 'flex';
                 document.getElementById('tableContent').innerHTML = '';
                 userRef.collection('transactions').get().then(function(snapshot) {
@@ -1039,25 +1822,26 @@
                     currentData = [];
                     snapshot.forEach(function(doc) { var d = doc.data(); d._id = doc.id; currentData.push(d); });
                     document.getElementById('rowCount').textContent = currentData.length + ' documents';
-                    renderTable(currentData);
+                    txAllVisibleCount = TX_PAGE_SIZE;
+                    renderTransactions();
                     updateStats();
                     showAddModal();
-                });
+                }).catch(function(err) { showToast('Error: ' + err.message, 'error'); });
             } else {
                 showAddModal();
             }
         }
 
-        // FAB: Quick Add — switches to transactions view in quick-add mode
         function fabQuickAdd() {
-            quickAddMode = true;
             if (currentCollection !== 'transactions') {
                 document.getElementById('collectionSelect').value = 'transactions';
                 currentCollection = 'transactions';
                 updateToolbarButton();
                 updateFabVisibility();
-                var userRef = db.collection('users').doc(currentUserId);
+                updateSubheaderVisibility();
                 document.getElementById('collectionTitle').textContent = 'Transactions';
+
+                var userRef = db.collection('users').doc(currentUserId);
                 document.getElementById('loadingIndicator').style.display = 'flex';
                 document.getElementById('tableContent').innerHTML = '';
                 userRef.collection('transactions').get().then(function(snapshot) {
@@ -1065,93 +1849,51 @@
                     currentData = [];
                     snapshot.forEach(function(doc) { var d = doc.data(); d._id = doc.id; currentData.push(d); });
                     document.getElementById('rowCount').textContent = currentData.length + ' documents';
-                    renderTable(currentData);
+                    txAllVisibleCount = TX_PAGE_SIZE;
+                    renderTransactions();
                     updateStats();
                     showQuickAddModal();
-                });
+                }).catch(function(err) { showToast('Error: ' + err.message, 'error'); });
             } else {
                 showQuickAddModal();
             }
         }
 
-        function showQuickAddModal() {
-            isEditing = false;
-            selectedDocId = null;
-            quickAddMode = true;
-            document.getElementById('modalTitle').textContent = '⚡ Quick Add Transaction';
-            generateForm(null);
-            document.getElementById('modalOverlay').classList.add('active');
-        }
-
-        // FAB: Add Account — switches to accounts view, opens modal
-        function fabAddAccount() {
-            if (currentCollection !== 'accounts') {
-                document.getElementById('collectionSelect').value = 'accounts';
-                currentCollection = 'accounts';
-                updateToolbarButton();
-                updateFabVisibility();
-                var userRef = db.collection('users').doc(currentUserId);
-                document.getElementById('collectionTitle').textContent = 'Accounts';
-                document.getElementById('loadingIndicator').style.display = 'flex';
-                document.getElementById('tableContent').innerHTML = '';
-                userRef.collection('accounts').get().then(function(snapshot) {
-                    document.getElementById('loadingIndicator').style.display = 'none';
-                    currentData = [];
-                    snapshot.forEach(function(doc) { var d = doc.data(); d._id = doc.id; currentData.push(d); });
-                    document.getElementById('rowCount').textContent = currentData.length + ' documents';
-                    renderTable(currentData);
-                    updateStats();
-                    showAddModal();
-                });
-            } else {
-                showAddModal();
-            }
+        function fabAddCategory() {
+            showAddCategoryModal();
         }
 
         // ============================================================
         // KEYBOARD SHORTCUTS
         // ============================================================
         document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') closeModal();
+            if (e.key === 'Escape') {
+                closeModal();
+                closeSettingsModal();
+                closePasswordModal();
+            }
             if (e.key === 'Enter' && loginSection.style.display !== 'none') handleSignIn();
             if (e.key === 'r' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); refreshData(); }
         });
 
         // ============================================================
-        // INIT
+        // INIT (no anonymous auth — user must sign in)
         // ============================================================
-        setTimeout(function() {
-            if (!auth.currentUser) {
-                auth.signInAnonymously()
-                    .then(function() { updateAuthUI(); showToast('Signed in as guest', 'info'); loadCollection(); })
-                    .catch(function(error) {
-                        console.warn('Anonymous auth failed:', error);
-                        loginSection.style.display = 'block';
-                        appContent.style.display = 'none';
-                        document.getElementById('fabContainer').style.display = 'none';
-                        if (error.code === 'auth/admin-restricted-operation') {
-                            document.getElementById('loginError').textContent =
-                                '💡 Anonymous sign-in is not enabled. Please use email/password.';
-                        }
-                        showToast('Please sign in to access your data', 'warning');
-                    });
-            }
-        }, 500);
+        updateAuthUI();
 
         // ============================================================
         // EXPOSE FUNCTIONS
         // ============================================================
         window.handleSignIn = handleSignIn;
-        window.handleAnonymousSignIn = handleAnonymousSignIn;
         window.toggleAuth = toggleAuth;
         window.togglePasswordVisibility = togglePasswordVisibility;
+        window.toggleConfirmPassword = toggleConfirmPassword;
         window.loadCollection = loadCollection;
         window.filterTable = filterTable;
         window.showAddModal = showAddModal;
         window.editDocument = editDocument;
         window.saveDocument = saveDocument;
         window.confirmDelete = confirmDelete;
-        window.confirmDeleteAll = confirmDeleteAll;
         window.closeModal = closeModal;
         window.refreshData = refreshData;
         window.showToast = showToast;
@@ -1159,10 +1901,19 @@
         window.toolbarAddAction = toolbarAddAction;
         window.fabAddTransaction = fabAddTransaction;
         window.fabQuickAdd = fabQuickAdd;
-        window.fabAddAccount = fabAddAccount;
+        window.fabAddCategory = fabAddCategory;
+        window.openTransactionSettings = openTransactionSettings;
+        window.closeSettingsModal = closeSettingsModal;
+        window.saveTransactionSettings = saveTransactionSettings;
+        window.closePasswordModal = closePasswordModal;
+        window.submitPasswordConfirmation = submitPasswordConfirmation;
+        window.switchTransactionFilter = switchTransactionFilter;
+        window.onMonthChange = onMonthChange;
+        window.onCustomMonthChange = onCustomMonthChange;
+        window.loadMoreTransactions = loadMoreTransactions;
+        window.onTxAccountChange = onTxAccountChange;
 
         console.log('✅ Finance Manager Admin Loaded');
-        console.log('📁 users/{userId}/{collection}/{docId}');
     </script>
 
 </body>
