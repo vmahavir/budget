@@ -106,7 +106,7 @@
         .toolbar input:focus { outline: none; border-color: #4fc3f7; box-shadow: 0 0 0 3px rgba(79,195,247,0.15); }
         .toolbar .action-group { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
 
-        /* ===== COLLECTION BUTTONS (replaces dropdown) ===== */
+        /* ===== COLLECTION BUTTONS ===== */
         .collection-buttons {
             display: inline-flex;
             gap: 0;
@@ -590,7 +590,6 @@
             <!-- Toolbar -->
             <div class="toolbar">
                 <div class="filter-group">
-                    <!-- Collection buttons (replaces dropdown) -->
                     <div class="collection-buttons" id="collectionButtons">
                         <button class="collection-btn" data-collection="accounts" onclick="switchCollection('accounts')">
                             <i class="fas fa-chart-bar"></i> Accounts
@@ -825,6 +824,14 @@
             categories: ['name']
         };
 
+        // Explicit column order for the accounts table (display only, _id-based actions still work)
+        var ACCOUNT_TABLE_COLUMNS = [
+            'accountName', 'accountType', 'frequency', 'defaultAmount',
+            'openingBalance', 'currentBalance', 'targetAmount', 'notes'
+        ];
+        // Explicit column order for the categories table
+        var CATEGORY_TABLE_COLUMNS = ['name'];
+
         var LS_KEY_DEFAULT_ACCOUNT = 'default_cashflow_account';
         var LS_KEY_KEEP_SIGNED_IN = 'keep_signed_in_pref';
         var TX_PAGE_SIZE = 50;
@@ -920,6 +927,14 @@
                 .replace(/>/g, '&gt;')
                 .replace(/"/g, '&quot;')
                 .replace(/'/g, '&#39;');
+        }
+
+        // Converts camelCase field key → "Title Case Label"
+        function prettyLabel(key) {
+            return key
+                .replace(/([A-Z])/g, ' $1')
+                .replace(/^./, function(str) { return str.toUpperCase(); })
+                .trim();
         }
 
         function togglePasswordVisibility() {
@@ -1252,12 +1267,11 @@
         }
 
         // ============================================================
-        // COLLECTION SWITCHING (buttons instead of dropdown)
+        // COLLECTION SWITCHING
         // ============================================================
         function switchCollection(collectionName) {
             if (currentCollection === collectionName) return;
             currentCollection = collectionName;
-            // Update button active state
             document.querySelectorAll('.collection-btn').forEach(function(btn) {
                 if (btn.dataset.collection === collectionName) btn.classList.add('active');
                 else btn.classList.remove('active');
@@ -1548,11 +1562,10 @@
             }
 
             function rowHtml(t, amountClass) {
-                var docId = t._id || t.transactionId || 'N/A';
+                var docId = t._id || t.transactionId || '';
                 var txType = t.transactionType || '';
                 var amount = (t.amount || 0).toLocaleString('en-IN');
                 return '<tr>'
-                    + '<td><span class="doc-id">' + escapeHtml(docId) + '</span></td>'
                     + '<td>' + escapeHtml(t.date || '—') + '</td>'
                     + '<td>' + escapeHtml(accountName(t.accountId)) + '</td>'
                     + '<td>' + escapeHtml(t.category || '—') + '</td>'
@@ -1566,19 +1579,20 @@
                     + '</tr>';
             }
 
+            // Total columns now = 7 (Date, Account, Category, Type, Amount, Notes, Actions)
             var html = '<table><thead><tr>'
-                + '<th>Document ID</th><th>Date</th><th>Account</th><th>Category</th>'
+                + '<th>Date</th><th>Account</th><th>Category</th>'
                 + '<th>Type</th><th>Amount</th><th>Notes</th>'
                 + '<th style="text-align:center;">Actions</th>'
                 + '</tr></thead><tbody>';
 
             if (inflow.length > 0) {
-                html += '<tr class="group-header-row inflow"><td colspan="8">💰 Inflow (Money Received) — ' + inflow.length + ' transaction' + (inflow.length !== 1 ? 's' : '') + '</td></tr>';
+                html += '<tr class="group-header-row inflow"><td colspan="7">💰 Inflow (Money Received) — ' + inflow.length + ' transaction' + (inflow.length !== 1 ? 's' : '') + '</td></tr>';
                 inflow.forEach(function(t) { html += rowHtml(t, 'inflow'); });
             }
 
             if (outflow.length > 0) {
-                html += '<tr class="group-header-row outflow"><td colspan="8">💳 Outflow (Money Paid) — ' + outflow.length + ' transaction' + (outflow.length !== 1 ? 's' : '') + '</td></tr>';
+                html += '<tr class="group-header-row outflow"><td colspan="7">💳 Outflow (Money Paid) — ' + outflow.length + ' transaction' + (outflow.length !== 1 ? 's' : '') + '</td></tr>';
                 outflow.forEach(function(t) { html += rowHtml(t, 'outflow'); });
             }
 
@@ -1593,17 +1607,16 @@
             }
 
             var html = '<table><thead><tr>'
-                + '<th>Document ID</th><th>Date</th><th>Account</th><th>Category</th>'
+                + '<th>Date</th><th>Account</th><th>Category</th>'
                 + '<th>Type</th><th>Amount</th><th>Notes</th>'
                 + '<th style="text-align:center;">Actions</th>'
                 + '</tr></thead><tbody>';
 
             list.forEach(function(t) {
-                var docId = t._id || t.transactionId || 'N/A';
+                var docId = t._id || t.transactionId || '';
                 var txType = t.transactionType || '';
                 var amount = (t.amount || 0).toLocaleString('en-IN');
                 html += '<tr>'
-                    + '<td><span class="doc-id">' + escapeHtml(docId) + '</span></td>'
                     + '<td>' + escapeHtml(t.date || '—') + '</td>'
                     + '<td>' + escapeHtml(accountName(t.accountId)) + '</td>'
                     + '<td>' + escapeHtml(t.category || '—') + '</td>'
@@ -1623,6 +1636,8 @@
 
         // ============================================================
         // RENDER TABLE (non-transactions)
+        //   - Accounts: explicit column order, no Document ID, prettified headers
+        //   - Categories: single 'name' column, no Document ID
         // ============================================================
         function renderTable(data) {
             var container = document.getElementById('tableContent');
@@ -1634,22 +1649,38 @@
                 return;
             }
 
-            var info = COLLECTION_NAMES[currentCollection];
-            var idField = info.idField;
             var isAccounts = (currentCollection === 'accounts');
+            var isCategories = (currentCollection === 'categories');
 
-            var allKeys = new Set();
-            data.forEach(function(item) { Object.keys(item).forEach(function(key) { allKeys.add(key); }); });
-            allKeys.delete('_id'); allKeys.delete('createdAt'); allKeys.delete('updatedAt');
+            // Choose columns
+            var keys;
+            if (isAccounts) {
+                keys = ACCOUNT_TABLE_COLUMNS.slice();
+            } else if (isCategories) {
+                keys = CATEGORY_TABLE_COLUMNS.slice();
+            } else {
+                // Fallback: auto-detect keys (minus internal + duplicate fields)
+                var allKeys = new Set();
+                data.forEach(function(item) { Object.keys(item).forEach(function(k) { allKeys.add(k); }); });
+                allKeys.delete('_id');
+                allKeys.delete('createdAt');
+                allKeys.delete('updatedAt');
+                allKeys.delete('accountId');
+                keys = Array.from(allKeys).slice(0, 8);
+            }
 
-            var keys = Array.from(allKeys).slice(0, 8);
-            var html = '<table><thead><tr><th>Document ID</th>';
-            keys.forEach(function(k) { html += '<th>' + k + '</th>'; });
+            // Build header row
+            var html = '<table><thead><tr>';
+            keys.forEach(function(k) {
+                var headerLabel = isAccounts ? prettyLabel(k) : k;
+                html += '<th>' + escapeHtml(headerLabel) + '</th>';
+            });
             html += '<th style="text-align:center;">Actions</th></tr></thead><tbody>';
 
+            // Build body rows
             data.forEach(function(item) {
-                var docId = item._id || item[idField] || 'N/A';
-                html += '<tr><td><span class="doc-id">' + escapeHtml(docId) + '</span></td>';
+                var docId = item._id || '';
+                html += '<tr>';
                 keys.forEach(function(k) {
                     var val = item[k];
                     if (val === undefined || val === null) val = '';
@@ -1658,8 +1689,6 @@
                     if (typeof val === 'string' && val.length > 50) val = val.substring(0, 50) + '...';
 
                     if (k === 'accountType' && val) {
-                        html += '<td><span class="type-badge ' + String(val).toLowerCase() + '">' + escapeHtml(val) + '</span></td>';
-                    } else if (k === 'transactionType' && val) {
                         html += '<td><span class="type-badge ' + String(val).toLowerCase() + '">' + escapeHtml(val) + '</span></td>';
                     } else {
                         html += '<td>' + escapeHtml(val) + '</td>';
@@ -1747,7 +1776,6 @@
         function openAccountDetail(accountDocId) {
             if (!currentUserId) { showToast('Please sign in first', 'warning'); return; }
 
-            // Find the account in currentData (accounts collection just loaded)
             var acc = currentData.find(function(a) {
                 return (a._id || a.accountId) === accountDocId;
             });
@@ -1755,21 +1783,17 @@
 
             accountDetailAccount = acc;
 
-            // Header
             document.getElementById('accDetailName').textContent = acc.accountName || acc.accountId || 'Account';
             document.getElementById('accDetailType').textContent = acc.accountType || '—';
 
             var balEl = document.getElementById('accDetailBalance');
             balEl.textContent = formatIndianCurrency(acc.currentBalance || 0);
-            var balColor = getAccountBalanceColor(acc);
-            balEl.style.color = balColor;
+            balEl.style.color = getAccountBalanceColor(acc);
 
-            // Load transactions for this account
             renderAccountDetailTransactions([]);
 
             document.getElementById('accountDetailOverlay').classList.add('active');
 
-            // Fetch fresh transactions for this account
             fetchTransactionsForAccount(acc.accountId).then(function(list) {
                 renderAccountDetailTransactions(list);
             }).catch(function(err) {
@@ -1795,7 +1819,6 @@
         function fetchTransactionsForAccount(accountId) {
             if (!currentUserId) return Promise.resolve([]);
             var userRef = db.collection('users').doc(currentUserId);
-            // Get all transactions and filter locally (avoids composite index requirement)
             return userRef.collection('transactions').get().then(function(snap) {
                 var list = [];
                 snap.forEach(function(doc) {
@@ -1803,7 +1826,6 @@
                     d._id = doc.id;
                     if (d.accountId === accountId) list.push(d);
                 });
-                // Sort newest-first
                 list.sort(function(a, b) { return txDateSortKey(b.date) - txDateSortKey(a.date); });
                 return list;
             });
@@ -1826,7 +1848,7 @@
 
             var html = '';
             list.forEach(function(t) {
-                var docId = t._id || t.transactionId || 'N/A';
+                var docId = t._id || t.transactionId || '';
                 var txType = t.transactionType || '';
                 var amountClass = getTransactionAmountClass(accType, txType);
                 var line1 = (t.category || 'No category') + ' • ' + (t.date || '—');
@@ -1848,10 +1870,6 @@
         }
 
         function getTransactionAmountClass(accType, txType) {
-            // Android AccountDetailModal rule:
-            //   Cashflow / Temporary → Credit = green, Debit = red
-            //   Liability, Asset, Investment, Income → always green
-            //   Default → green
             if (accType === 'Cashflow' || accType === 'Temporary') {
                 return (txType === 'Credit') ? 'green' : 'red';
             }
@@ -1862,18 +1880,15 @@
             if (!accountDetailAccount) return;
             var accId = accountDetailAccount.accountId;
             closeAccountDetail();
-            // Switch to transactions collection first if not already
             if (currentCollection !== 'transactions') {
                 switchCollection('transactions');
             }
-            // Open Add Transaction modal with locked account
             openAddTransactionWithLockedAccount(accId);
         }
 
         function accountDetailEditTransaction(docId) {
             closeAccountDetail();
             if (currentCollection !== 'transactions') {
-                // Switch and wait for load, then edit
                 currentCollection = 'transactions';
                 document.querySelectorAll('.collection-btn').forEach(function(btn) {
                     if (btn.dataset.collection === 'transactions') btn.classList.add('active');
@@ -1907,12 +1922,10 @@
             userRef.collection('transactions').doc(docId).delete()
                 .then(function() {
                     showToast('Transaction deleted successfully', 'success');
-                    // Refresh detail modal list
                     if (accountDetailAccount) {
                         fetchTransactionsForAccount(accountDetailAccount.accountId).then(function(list) {
                             renderAccountDetailTransactions(list);
                         });
-                        // Also refresh the account balance in the header
                         fetchSingleDoc('accounts', accountDetailAccount.accountId).then(function(fresh) {
                             if (fresh) {
                                 accountDetailAccount = fresh;
@@ -1921,7 +1934,6 @@
                             }
                         });
                     }
-                    // Refresh underlying data in background
                     preloadCache().then(function() {
                         if (currentCollection === 'transactions') {
                             var uRef = db.collection('users').doc(currentUserId);
@@ -2172,7 +2184,6 @@
 
         // ============================================================
         // GENERATE FORM (Add mode only)
-        //   lockedAccountId — when set, account field is read-only
         // ============================================================
         function generateForm(data, overrideFields, lockedAccountId) {
             var container = document.getElementById('modalBody');
@@ -2208,7 +2219,6 @@
 
             fields.forEach(function(key) {
                 var value = data ? (data[key] !== undefined ? data[key] : '') : '';
-                // If locked account is set, force accountId value
                 if (lockedAccountId && key === 'accountId') {
                     value = lockedAccountId;
                 }
@@ -2217,14 +2227,13 @@
 
                 if (currentCollection === 'transactions' && key === 'accountId') {
                     if (lockedAccountId && lockedAcc) {
-                        // Read-only display when locked
                         var lockedLabel = (lockedAcc.accountName || lockedAcc.accountId) + ' (' + lockedAcc.accountType + ')';
                         html += '<div class="form-group">'
                             +   '<label>Account</label>'
                             +   '<input type="text" id="field_accountId" value="' + escapeHtml(lockedLabel) + '" readonly data-locked-account-id="' + escapeHtml(lockedAccountId) + '">'
                             +   '<small class="help">Account is locked to this selection.</small>'
                             + '</div>';
-                        return; // skip default rendering
+                        return;
                     }
                     inputType = 'select';
                     options = '<option value="">Select Account</option>';
@@ -2269,7 +2278,7 @@
                     inputType = 'date';
                 }
 
-                var label = key.replace(/([A-Z])/g, ' $1').replace(/^./, function(str) { return str.toUpperCase(); });
+                var label = prettyLabel(key);
                 html += '<div class="form-group"><label>' + label + '</label>';
                 if (inputType === 'select') {
                     html += '<select id="field_' + key + '"' +
@@ -2289,7 +2298,6 @@
             container.innerHTML = html;
 
             if (currentCollection === 'transactions') {
-                // Trigger category population based on locked/pre-selected account
                 if (lockedAccountId) {
                     onTxAccountChange(true);
                 } else {
@@ -2422,7 +2430,6 @@
             fields.forEach(function(key) {
                 var el = document.getElementById('field_' + key);
                 if (el && el.type !== 'hidden') {
-                    // Skip locked read-only accountId input (its value is display text, not ID)
                     if (key === 'accountId' && container.dataset.lockedAccountId) {
                         return;
                     }
@@ -2432,7 +2439,6 @@
                 }
             });
 
-            // Apply locked account ID
             if (container.dataset.lockedAccountId && currentCollection === 'transactions') {
                 data.accountId = container.dataset.lockedAccountId;
             }
@@ -2666,7 +2672,6 @@
 
         function fabAddTransaction() {
             if (currentCollection !== 'transactions') {
-                // Switch to transactions, then open add modal
                 currentCollection = 'transactions';
                 document.querySelectorAll('.collection-btn').forEach(function(btn) {
                     if (btn.dataset.collection === 'transactions') btn.classList.add('active');
